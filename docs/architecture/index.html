@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notes App Architecture</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f5f7;
+        --panel: #ffffff;
+        --ink: #172033;
+        --muted: #5f6878;
+        --line: #d9dee7;
+        --accent: #176b87;
+        --accent-soft: #e7f4f7;
+        --code: #293241;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Pretendard,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.6;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+        padding: 28px clamp(20px, 5vw, 56px);
+      }
+
+      main {
+        width: min(1180px, calc(100% - 40px));
+        margin: 28px auto 56px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(28px, 4vw, 42px);
+        line-height: 1.15;
+      }
+
+      h2 {
+        margin: 0 0 14px;
+        font-size: 22px;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      code {
+        color: var(--code);
+        background: #eef1f5;
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+
+      .summary {
+        color: var(--muted);
+        max-width: 860px;
+      }
+
+      .section {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-top: 18px;
+        padding: clamp(18px, 3vw, 28px);
+      }
+
+      .notes {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        margin-top: 14px;
+      }
+
+      .note {
+        border-left: 4px solid var(--accent);
+        background: var(--accent-soft);
+        border-radius: 6px;
+        padding: 12px 14px;
+        color: var(--muted);
+      }
+
+      .mermaid {
+        width: 100%;
+        overflow-x: auto;
+        padding: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Notes App Architecture</h1>
+      <p class="summary">
+        React 19, TypeScript, Vite, JSON Server 기반 노트 앱의 컴포넌트 의존성,
+        상태 소유권, API 호출 흐름을 Mermaid로 시각화한 문서입니다.
+      </p>
+    </header>
+
+    <main>
+      <section class="section">
+        <h2>컴포넌트 의존성</h2>
+        <pre class="mermaid">
+flowchart TD
+  main["src/main.tsx<br/>React 진입점"] --> app["App.tsx<br/>선택/생성 UI 상태"]
+  app --> provider["NotesProvider<br/>NotesContext.tsx"]
+  app --> layout["Layout.tsx<br/>화면 프레임"]
+  app --> list["NoteList.tsx<br/>목록 상태 표시"]
+  app --> editor["NoteEditor.tsx<br/>생성/수정 폼"]
+
+  layout -. "sidebar 슬롯" .-> list
+  layout -. "main 슬롯" .-> editor
+  list --> item["NoteItem.tsx<br/>개별 노트"]
+
+  list --> hook["useNotes()"]
+  editor --> hook
+  hook --> provider
+  provider --> api["src/api/notes.ts<br/>fetch/create/update/delete"]
+  api --> type["src/types/note.ts<br/>Note"]
+  provider --> type
+  item --> type
+
+  api --> server["JSON Server<br/>http://localhost:3001/notes"]
+
+  classDef entry fill:#e7f4f7,stroke:#176b87,color:#172033;
+  classDef ui fill:#fff6df,stroke:#b58118,color:#172033;
+  classDef state fill:#eef7ed,stroke:#3c7b43,color:#172033;
+  classDef data fill:#f2edf9,stroke:#6d4aa2,color:#172033;
+  class main,app entry;
+  class layout,list,item,editor ui;
+  class provider,hook state;
+  class api,type,server data;
+        </pre>
+        <div class="notes">
+          <p class="note">
+            <code>App</code>은 화면 조합과 <code>selectedNoteId</code>,
+            <code>isCreating</code> 같은 로컬 UI 상태만 소유합니다.
+          </p>
+          <p class="note">
+            노트 서버 상태와 CRUD 액션은 <code>NotesContext</code>가 소유하며,
+            컴포넌트는 <code>useNotes()</code>로 접근합니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>상태 흐름</h2>
+        <pre class="mermaid">
+flowchart LR
+  json["JSON Server<br/>db.json"] --> fetch["fetchNotes()"]
+  fetch --> context["NotesContext 상태<br/>notes / loading / error"]
+  context --> list["NoteList<br/>목록 렌더링"]
+  context --> editor["NoteEditor<br/>선택 노트 동기화"]
+
+  newClick["새 노트 클릭"] --> appCreate["App: isCreating=true<br/>selectedNoteId=null"]
+  selectClick["노트 선택"] --> appSelect["App: selectedNoteId=id<br/>isCreating=false"]
+  appCreate --> editor
+  appSelect --> editor
+
+  editor --> save["저장 클릭"]
+  save --> createOrUpdate{"생성 상태인가?"}
+  createOrUpdate -->|yes| create["createNote(title, content)"]
+  createOrUpdate -->|no| update["updateNote(id, updates)"]
+  create --> apiCreate["api.createNote()"]
+  update --> apiUpdate["api.updateNote()"]
+  apiCreate --> context
+  apiUpdate --> context
+
+  list --> deleteClick["삭제 클릭"]
+  deleteClick --> delete["deleteNote(id)"]
+  delete --> apiDelete["api.deleteNote()"]
+  apiDelete --> context
+
+  classDef app fill:#e7f4f7,stroke:#176b87,color:#172033;
+  classDef view fill:#fff6df,stroke:#b58118,color:#172033;
+  classDef state fill:#eef7ed,stroke:#3c7b43,color:#172033;
+  classDef api fill:#f2edf9,stroke:#6d4aa2,color:#172033;
+  class appCreate,appSelect app;
+  class list,editor,newClick,selectClick,save,deleteClick view;
+  class context,createOrUpdate state;
+  class json,fetch,create,update,delete,apiCreate,apiUpdate,apiDelete api;
+        </pre>
+      </section>
+
+      <section class="section">
+        <h2>API 호출 시퀀스</h2>
+        <pre class="mermaid">
+sequenceDiagram
+  participant User as 사용자
+  participant UI as NoteEditor / NoteList
+  participant Context as NotesContext
+  participant API as src/api/notes.ts
+  participant Server as JSON Server
+
+  User->>UI: 생성, 수정, 삭제 액션
+  UI->>Context: createNote / updateNote / deleteNote
+  Context->>API: createNote / updateNote / deleteNote
+  API->>Server: POST / PATCH / DELETE /notes
+  Server-->>API: 성공 응답
+  API-->>Context: Note 또는 void
+  Context->>Context: notes 상태 갱신
+  Context-->>UI: 최신 상태 렌더링
+
+  Note over UI,Context: alert는 사용하지 않고 오류는 console.error로 기록
+        </pre>
+      </section>
+    </main>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        securityLevel: "strict",
+        theme: "base",
+        themeVariables: {
+          primaryColor: "#e7f4f7",
+          primaryTextColor: "#172033",
+          primaryBorderColor: "#176b87",
+          lineColor: "#5f6878",
+          fontFamily: "Pretendard, Segoe UI, sans-serif",
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -1,4 +1,4 @@
-# AGENTS.md
+﻿# AGENTS.md
 
 ## 프로젝트 개요
 
@@ -99,6 +99,11 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 - `NoteEditor`는 `selectedNoteId`와 `isCreating`으로 빈 상태, 생성 상태, 수정 상태를 결정.
 - `NoteItem` 안의 삭제 버튼은 `stopPropagation()`을 호출해 삭제 클릭이 노트 선택으로 이어지지 않게 한다.
 - API base URL은 현재 하드코딩. 변경할 때는 문자열을 여러 곳에 흩뿌리지 말고 작고 명확한 설정 경로를 선호.
+
+## Git 워크플로우
+1. 코드 커밋 전에 `githook/pre-commit.md`를 수행.
+2. 통과했다면 `githook/commit-msg.md`를 수행.
+3. 커밋 진행.
 
 ## 에이전트 작업 지침
 
