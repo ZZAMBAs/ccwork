@@ -103,7 +103,7 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 ## Git 워크플로우
 
 1. 메인 에이전트가 커밋 대상 파일을 staged 상태로 만들고 커밋 메시지 초안을 작성.
-2. 가능하면 별도 검증 서브에이전트를 생성해 staged 파일과 커밋 메시지 초안을 전달.
+2. 필요하면 별도 검증 서브에이전트를 생성해 staged 파일과 커밋 메시지 초안을 전달.
 3. 검증 서브에이전트는 `AGENTS.md`, `githook/pre-commit.md`, `githook/commit-msg.md`를 읽고 read-only로 검증.
 4. 검증 결과 코드에 따라 처리.
    - `0`: pre-commit, commit-msg 모두 통과. 메인 에이전트가 커밋 진행.
