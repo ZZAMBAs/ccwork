@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mermaid Architecture Doc"
+  short_description: "한국어 Mermaid 아키텍처 HTML 문서 생성"
+  default_prompt: "Use $mermaid-architecture-doc to generate a Korean Mermaid architecture HTML document."
