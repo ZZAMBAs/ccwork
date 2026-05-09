@@ -101,9 +101,16 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 - API base URL은 현재 하드코딩. 변경할 때는 문자열을 여러 곳에 흩뿌리지 말고 작고 명확한 설정 경로를 선호.
 
 ## Git 워크플로우
-1. 코드 커밋 전에 `githook/pre-commit.md`를 수행.
-2. 통과했다면 `githook/commit-msg.md`를 수행.
-3. 커밋 진행.
+
+1. 메인 에이전트가 커밋 대상 파일을 staged 상태로 만들고 커밋 메시지 초안을 작성.
+2. 가능하면 별도 검증 서브에이전트를 생성해 staged 파일과 커밋 메시지 초안을 전달.
+3. 검증 서브에이전트는 `AGENTS.md`, `githook/pre-commit.md`, `githook/commit-msg.md`를 읽고 read-only로 검증.
+4. 검증 결과 코드에 따라 처리.
+   - `0`: pre-commit, commit-msg 모두 통과. 메인 에이전트가 커밋 진행.
+   - `1`: pre-commit 실패. 메인 에이전트가 staged 파일을 수정하고 다시 검증 요청.
+   - `2`: commit-msg 실패. 메인 에이전트가 커밋 메시지를 수정하고 다시 검증 요청.
+   - `3`: 검증 자체 실패 또는 복합 실패. 원인을 보고하고 중단하거나 다시 검증.
+5. 서브에이전트를 사용할 수 없는 경우 메인 에이전트가 같은 순서로 직접 검증.
 
 ## 에이전트 작업 지침
 
