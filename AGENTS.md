@@ -47,6 +47,7 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 - `npm run format`: Prettier로 저장소 전체를 포맷.
 - `npm run prepare`: Husky Git hook 경로를 설정.
 - `npm run lint-staged`: staged 파일에 대해 lint-staged를 실행.
+- `npm run commitlint`: 커밋 메시지를 commitlint로 검사.
 - `npm test`: Vitest를 1회 실행.
 - `npm run test:watch`: Vitest를 watch 모드로 실행.
 
@@ -63,8 +64,10 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
   - trailing comma 사용
   - print width 100
 - Husky pre-commit hook은 `.husky/pre-commit`에서 `npx lint-staged`를 실행.
+- Husky commit-msg hook은 `.husky/commit-msg`에서 `commitlint`를 실행.
 - lint-staged는 staged TypeScript 파일에 `eslint --fix`, `prettier --write`를 순차 적용.
 - lint-staged는 staged JS/JSON/CSS/Markdown/HTML 파일에 `prettier --write`를 적용.
+- commitlint 설정은 `commitlint.config.cjs`에 둔다.
 
 ## TypeScript 규칙
 
@@ -107,10 +110,10 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 
 ## Git 워크플로우
 
-- 커밋 전에는 `githook/commit-msg.md`를 확인한다.
 - 실제 pre-commit 검증은 Husky가 `.husky/pre-commit`에서 `npx lint-staged`로 수행한다.
-- Husky/lint-staged 실패 시 커밋하지 말고 원인을 수정한 뒤 다시 시도한다.
-- 커밋 메시지는 `githook/commit-msg.md` 기준을 따른다.
+- 실제 commit-msg 검증은 Husky가 `.husky/commit-msg`에서 commitlint로 수행한다.
+- Husky, lint-staged, commitlint 실패 시 커밋하지 말고 원인을 수정한 뒤 다시 시도한다.
+- 커밋 메시지는 `feat`, `fix`, `docs`, `refactor`, `test`, `style`, `chore` 타입을 사용한다.
 
 ## 에이전트 작업 지침
 
