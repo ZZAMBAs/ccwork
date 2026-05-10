@@ -8,6 +8,8 @@
     "server": "json-server --watch db.json --port 3001",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
+    "prepare": "husky",
+    "lint-staged": "lint-staged",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -29,13 +31,22 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
-    "json-server": "^1.0.0-beta.3",
+    "husky": "^9.1.7",
     "jsdom": "^26.0.0",
+    "json-server": "^1.0.0-beta.3",
+    "lint-staged": "^17.0.4",
     "prettier": "^3.5.2",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0",
     "vite": "^6.2.0",
     "vitest": "^3.0.8"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,css,md,html}": "prettier --write"
   }
 }

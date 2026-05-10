@@ -45,6 +45,8 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 - `npm run server`: JSON Server만 `3001` 포트에서 실행.
 - `npm run lint`: ESLint를 `--fix` 옵션으로 실행.
 - `npm run format`: Prettier로 저장소 전체를 포맷.
+- `npm run prepare`: Husky Git hook 경로를 설정.
+- `npm run lint-staged`: staged 파일에 대해 lint-staged를 실행.
 - `npm test`: Vitest를 1회 실행.
 - `npm run test:watch`: Vitest를 watch 모드로 실행.
 
@@ -60,6 +62,9 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
   - 들여쓰기 2칸
   - trailing comma 사용
   - print width 100
+- Husky pre-commit hook은 `.husky/pre-commit`에서 `npx lint-staged`를 실행.
+- lint-staged는 staged TypeScript 파일에 `eslint --fix`, `prettier --write`를 순차 적용.
+- lint-staged는 staged JS/JSON/CSS/Markdown/HTML 파일에 `prettier --write`를 적용.
 
 ## TypeScript 규칙
 
@@ -102,15 +107,10 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 
 ## Git 워크플로우
 
-1. 메인 에이전트가 커밋 대상 파일을 staged 상태로 만들고 커밋 메시지 초안을 작성.
-2. 필요하면 별도 검증 서브에이전트를 생성해 staged 파일과 커밋 메시지 초안을 전달.
-3. 검증 서브에이전트는 `AGENTS.md`, `githook/pre-commit.md`, `githook/commit-msg.md`를 읽고 read-only로 검증.
-4. 검증 결과 코드에 따라 처리.
-   - `0`: pre-commit, commit-msg 모두 통과. 메인 에이전트가 커밋 진행.
-   - `1`: pre-commit 실패. 메인 에이전트가 staged 파일을 수정하고 다시 검증 요청.
-   - `2`: commit-msg 실패. 메인 에이전트가 커밋 메시지를 수정하고 다시 검증 요청.
-   - `3`: 검증 자체 실패 또는 복합 실패. 원인을 보고하고 중단하거나 다시 검증.
-5. 서브에이전트를 사용할 수 없는 경우 메인 에이전트가 같은 순서로 직접 검증.
+- 커밋 전에는 `githook/commit-msg.md`를 확인한다.
+- 실제 pre-commit 검증은 Husky가 `.husky/pre-commit`에서 `npx lint-staged`로 수행한다.
+- Husky/lint-staged 실패 시 커밋하지 말고 원인을 수정한 뒤 다시 시도한다.
+- 커밋 메시지는 `githook/commit-msg.md` 기준을 따른다.
 
 ## 에이전트 작업 지침
 
