@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/design-context.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Checking design-system context"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/design-stop-check.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Checking design-system rules"
+          }
+        ]
+      }
+    ]
+  }
+}
