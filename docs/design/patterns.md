@@ -15,6 +15,8 @@ className =
 
 저장 버튼처럼 가로 여백이 더 필요한 경우 `px-5`를 사용한다. 비동기 처리 중 비활성화가 필요하면 `disabled:opacity-40`과 `disabled` 속성을 함께 적용한다.
 
+새 버튼 컴포넌트를 만들 때는 반드시 `disabled` 상태를 props로 받고, 실제 `<button disabled={disabled}>`와 비활성 시각 스타일을 함께 연결한다.
+
 ### 보조 버튼
 
 현재 사용 위치는 `취소`다.
@@ -70,18 +72,21 @@ className =
 ## Do
 
 - 스타일/UI 작업 전에는 `docs/design/design.md`를 먼저 확인하고 연결된 상세 문서를 따른다.
-- 색상은 `src/index.css`의 theme token을 우선 사용한다.
+- 색상은 `src/index.css`의 CSS 변수와 theme token만 사용한다.
 - 기존 Tailwind utility 패턴을 재사용하고, 새 수치를 추가하기 전에 `tokens.md`의 색상/간격/타이포그래피 기준과 비교한다.
 - 카드, 선택 상태, hover, disabled, 입력 필드 스타일은 현재 노트 앱의 조용한 편집 UI 톤에 맞춘다.
+- 버튼 컴포넌트는 `disabled` props를 받아 비활성 동작과 시각 상태를 외부에서 제어할 수 있게 한다.
 - 새 상호작용을 추가하면 `interactions.md`에 트리거, 동작, 시각 변화를 함께 문서화한다.
 - 새 스타일 토큰이 필요하면 사용 위치와 목적을 디자인 문서에 남긴다.
 
 ## Don't
 
 - 임의 색상, 임의 그림자, 임의 radius를 컴포넌트에 직접 흩뿌리지 않는다.
+- hex, rgb, rgba, hsl 색상 값을 컴포넌트, CSS, inline style에 직접 하드코딩하지 않는다.
 - 기존 톤과 맞지 않는 강한 장식, 과한 색 대비, 큰 배경 효과, 불필요한 카드 중첩을 추가하지 않는다.
 - input과 textarea에 갑작스러운 테두리, 배경, focus ring을 추가하지 않는다.
 - hover, focus, disabled 상태를 문서에 없는 새 패턴으로 만들지 않는다.
+- 버튼 컴포넌트 내부에서만 비활성 여부를 결정하거나 `disabled` props 없이 비활성 스타일만 흉내 내지 않는다.
 - 스타일 작업 범위를 넘어 문구, 인코딩, API, 저장 동작을 함께 고치지 않는다.
 - 새 페이지나 컴포넌트를 만들 때 이 디자인 시스템과 다른 독립적인 시각 언어를 만들지 않는다.
 
@@ -97,7 +102,9 @@ className =
 ## 새 컴포넌트 작성 체크리스트
 
 - 색상은 `src/index.css`의 theme token을 우선 사용한다.
+- 색상은 CSS 변수/theme token으로만 사용하고 하드코딩하지 않는다.
 - 주요 액션은 `bg-foreground text-card rounded-xl text-sm font-semibold` 패턴을 따른다.
+- 버튼 컴포넌트는 `disabled` props와 실제 disabled 상태를 함께 제공한다.
 - 보조 액션은 muted 배경과 muted foreground 텍스트를 사용한다.
 - 목록형 항목은 흰색 카드, `border-border`, `rounded-2xl`, 낮은 그림자를 기준으로 한다.
 - 선택 상태는 색상을 새로 만들기보다 `border-foreground`와 그림자로 표현한다.

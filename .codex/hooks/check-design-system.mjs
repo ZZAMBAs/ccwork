@@ -21,6 +21,12 @@ const VIOLATION_PATTERNS = [
     message: 'Avoid inline color styles; use design tokens and Tailwind classes instead.',
   },
   {
+    name: 'Hardcoded CSS color',
+    pattern: /(?:^|[^\w-])(?:#[0-9a-fA-F]{3,8}\b|rgba?\([^)]+\)|hsla?\((?!var\()[^)]+\))/g,
+    message:
+      'Colors must come from CSS variables/theme tokens. Do not hardcode hex, rgb, rgba, hsl, or hsla values.',
+  },
+  {
     name: 'Undocumented heavy decoration',
     pattern: /\b(?:blur-\w+|backdrop-blur(?:-\w+)?|from-\w+|via-\w+|to-\w+|rounded-full)\b/g,
     message:
@@ -114,6 +120,25 @@ function inspectContent(file, content) {
     }
   });
 
+  if (path.extname(file) === '.tsx') {
+    const componentMatches = content.matchAll(/export function (\w*Button\w*)\s*\(([^)]*)\)/g);
+    for (const match of componentMatches) {
+      const componentName = match[1];
+      const params = match[2];
+      if (!/\bdisabled\b/.test(params)) {
+        const line = content.slice(0, match.index).split(/\r?\n/).length;
+        violations.push({
+          file,
+          line,
+          rule: 'Button component missing disabled prop',
+          message:
+            'Button components must accept a disabled prop and pass it to the underlying button element.',
+          snippet: `export function ${componentName}(${params})`,
+        });
+      }
+    }
+  }
+
   return violations;
 }
 
@@ -122,12 +147,13 @@ function runSelfTest() {
     '<div className="bg-[#fff] rounded-full">',
     "const style = { color: 'red' };",
     '<div className="from-blue-500 to-purple-500" />',
+    'export function BadButton() { return <button>Bad</button>; }',
   ].join('\n');
   const violations = inspectContent('src/__design_check_fixture__.tsx', fixture);
 
-  if (violations.length < 3) {
+  if (violations.length < 4) {
     process.stderr.write(
-      `Design check self-test failed: expected at least 3 violations, got ${violations.length}.\n`,
+      `Design check self-test failed: expected at least 4 violations, got ${violations.length}.\n`,
     );
     process.exit(1);
   }
