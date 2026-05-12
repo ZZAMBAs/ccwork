@@ -1,5 +1,7 @@
 ﻿# AGENTS.md
 
+이 파일은 최대 200자 이내로 유지한다.
+
 ## 프로젝트 개요
 
 Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이다.
@@ -117,6 +119,7 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 - 실제 commit-msg 검증은 Husky가 `.husky/commit-msg`에서 commitlint로 수행한다.
 - Husky, lint-staged, commitlint 실패 시 커밋하지 말고 원인을 수정한 뒤 다시 시도한다.
 - 커밋 메시지는 `feat`, `fix`, `docs`, `refactor`, `test`, `style`, `chore` 타입을 사용한다.
+- 커밋 메시지는 한국어 기반으로 작성한다.
 
 ## 에이전트 작업 지침
 
