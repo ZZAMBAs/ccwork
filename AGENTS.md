@@ -1,5 +1,7 @@
 ﻿# AGENTS.md
 
+이 파일은 최대 200자 이내로 유지한다.
+
 ## 프로젝트 개요
 
 Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이다.
@@ -97,6 +99,9 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 - API 호출은 `src/api` 안에 둔다.
 - 공용 도메인 타입은 `src/types` 안에 둔다.
 - 스타일은 기존 Tailwind utility와 `src/index.css`의 테마 토큰을 따른다.
+- 스타일/UI 작업 전에는 `docs/design/design.md`를 확인하고, 색상/간격/타이포그래피/컴포넌트 패턴/상호작용은 해당 디자인 시스템 문서를 기준으로 맞춘다.
+- 디자인 시스템 문서와 사용자 요청이 충돌하면 범위를 넓혀 임의로 고치지 말고 사용자에게 확인한다.
+- `.codex/hooks`의 Codex hook은 스타일/UI 요청 시 디자인 시스템 컨텍스트를 주입하고, 턴 종료 전 명백한 디자인 시스템 위반을 검사한다.
 - import 순서는 기존 스타일처럼 패키지 import를 먼저 두고, 그 뒤에 상대 경로 import를 둔다.
 - 주석은 짧고 필요한 경우에만 작성. 코드가 이미 설명하는 내용을 반복하지 않는다.
 - 현재 일부 사용자 표시 한국어 문자열은 mojibake 상태. 문구/인코딩 수정이 목표가 아닌 작업에서는 범위를 넓혀 고치지 않는다.
@@ -114,10 +119,13 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 - 실제 commit-msg 검증은 Husky가 `.husky/commit-msg`에서 commitlint로 수행한다.
 - Husky, lint-staged, commitlint 실패 시 커밋하지 말고 원인을 수정한 뒤 다시 시도한다.
 - 커밋 메시지는 `feat`, `fix`, `docs`, `refactor`, `test`, `style`, `chore` 타입을 사용한다.
+- 커밋 메시지는 한국어 기반으로 작성한다.
 
 ## 에이전트 작업 지침
 
 - 수정 전에 관련 파일을 읽고, README 내용만으로 판단하지 않는다.
+- 스타일/UI 변경 작업에서는 `docs/design/design.md`와 연결된 상세 문서를 먼저 읽고 현재 디자인 시스템에 맞춘다.
+- Codex hook 검증이 디자인 시스템 위반을 보고하면, 최종 응답 전에 위반을 수정하고 `node .codex/hooks/check-design-system.mjs`로 재검증한다.
 - 요청받은 동작에 필요한 범위로 변경을 제한한다.
 - 사용자의 기존 변경 사항을 되돌리지 않는다.
 - 코드 변경 후에는 가장 좁고 의미 있는 검증부터 실행.
