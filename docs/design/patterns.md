@@ -92,11 +92,11 @@ className =
 
 ## Codex hook 검증
 
-- `.codex/hooks/design-context.mjs`는 UI/style/design 관련 요청에서 `docs/design/design.md`를 먼저 참고하라는 컨텍스트를 주입한다.
+- `.codex/skills/feature-design` 스킬은 UI/style/design 관련 작업에서 `docs/design/design.md`와 필요한 상세 문서를 참고하는 워크플로우를 제공한다.
 - `.codex/hooks/design-stop-check.mjs`는 턴 종료 전 `.codex/hooks/check-design-system.mjs`를 실행한다.
 - 자동 검증은 명백한 위반만 잡는다: 임의 색상 Tailwind 클래스, inline color style, 현재 톤과 맞지 않는 강한 장식 후보.
 - 자동 검증은 정성적 미감, 정보 구조, 실제 브라우저 렌더링 품질을 판단하지 않는다.
-- hook이 위반을 보고하면 기존 theme token과 문서화된 패턴으로 수정하고 검증 스크립트를 다시 실행한다.
+- Stop hook이 위반을 보고하면 `feature-design` 스킬 지침에 따라 기존 theme token과 문서화된 패턴으로 수정하고 검증 스크립트를 다시 실행한다.
 - repo-local Codex hook은 프로젝트 `.codex` layer가 trusted 상태일 때 동작한다.
 
 ## 새 컴포넌트 작성 체크리스트
