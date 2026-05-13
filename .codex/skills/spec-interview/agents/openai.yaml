@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: 'Spec Interview'
+  short_description: '기능 요구사항을 질문으로 구체화해 spec-fixed.md 작성'
+  default_prompt: '사용자가 어떤 기능을 만들거나 구현하고 싶다고 말했지만 요구사항이 모호할 때 $spec-interview를 사용해 질문하고 docs/feature/{name}/spec-fixed.md를 작성한다.'
