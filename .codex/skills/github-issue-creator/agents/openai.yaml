@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Issue Creator"
+  short_description: "작업과 이슈 문서를 GitHub Issues로 등록"
+  default_prompt: "Use $github-issue-creator to register a described task or existing issue documents as GitHub Issues."

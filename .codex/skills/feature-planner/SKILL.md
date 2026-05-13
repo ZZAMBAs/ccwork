@@ -1,6 +1,6 @@
 ---
 name: feature-planner
-description: Notes App 프로젝트 로컬 기능 기획 워크플로우. 기능 아이디어나 docs/features/{name}/spec-original.md를 확정 요구사항, ADR 형식의 기술 결정이 포함된 PRD, 수직 슬라이스 이슈, GitHub Issues, 프로젝트 보드 기획 산출물로 변환할 때 사용한다.
+description: Notes App 프로젝트 로컬 기능 기획 워크플로우. 기능 아이디어나 docs/feature/{name}/spec-original.md 또는 docs/features/{name}/spec-original.md를 확정 요구사항, ADR 형식의 기술 결정이 포함된 PRD, 수직 슬라이스 이슈 기획 산출물로 변환할 때 사용한다. GitHub Issues 등록이나 프로젝트 보드 등록은 필요 시 $github-issue-creator를 추가로 사용한다.
 ---
 
 # Feature Planner
@@ -13,20 +13,21 @@ description: Notes App 프로젝트 로컬 기능 기획 워크플로우. 기능
 spec-original.md
   -> spec-fixed.md
   -> prd.md
-  -> issues.md + GitHub Issues
+  -> issues.md
+  -> 필요 시 $github-issue-creator로 GitHub Issues 등록
 ```
 
-모든 산출물은 `docs/features/{name}/` 아래에 둔다. 기획 전에는 관련 코드를 읽고, 현재 프로젝트의 아키텍처, 네이밍, 테스트, UI 규칙을 제약 조건으로 사용한다.
+모든 산출물은 기존 기능 폴더 경로를 따른다. 현재 프로젝트에서는 `docs/feature/{name}/`를 우선 사용하고, 이미 `docs/features/{name}/`가 있으면 그 경로를 유지한다. 기획 전에는 관련 코드를 읽고, 현재 프로젝트의 아키텍처, 네이밍, 테스트, UI 규칙을 제약 조건으로 사용한다.
 
 ## 전체 절차
 
-1. `docs/features/{name}/spec-original.md`에서 시작한다. 사용자가 아이디어만 제공하면 이 파일부터 만든다.
+1. `docs/feature/{name}/spec-original.md` 또는 `docs/features/{name}/spec-original.md`에서 시작한다. 사용자가 아이디어만 제공하면 현재 프로젝트 관례인 `docs/feature/{name}/spec-original.md`부터 만든다.
 2. 요구사항 인터뷰를 진행하고 `spec-fixed.md`를 작성한다.
 3. 사용자가 `spec-fixed.md`를 확정할 때까지 `[GATE]`에서 멈춘다.
 4. `prd.md` 초안을 만들고 아키텍처 3안을 비교한 뒤, 사용자가 하나를 선택할 때까지 `[GATE]`에서 멈춘다.
 5. 선택된 안을 ADR 형식으로 작성하고 Out of Scope을 완성한 뒤, 사용자가 범위를 확정할 때까지 `[GATE]`에서 멈춘다.
 6. PRD를 수직 슬라이스 이슈로 분해해 `issues.md`를 작성하고, 사용자가 이슈 목록을 확정할 때까지 `[GATE]`에서 멈춘다.
-7. GitHub Issue 생성과 프로젝트 보드 등록은 사용자가 명시적으로 승인하고 필요한 `gh` 정보가 준비된 뒤에만 진행한다.
+7. GitHub Issue 생성과 프로젝트 보드 등록이 필요하면 사용자의 명시적 승인 후 `$github-issue-creator`를 사용한다.
 
 게이트를 건너뛰지 않는다. 사용자가 명시적으로 구현 전환을 요청하지 않는 한 기능 구현을 시작하지 않는다.
 
@@ -38,7 +39,7 @@ spec-original.md
 
 ### 입력
 
-- `docs/features/{name}/spec-original.md`
+- `docs/feature/{name}/spec-original.md` 또는 `docs/features/{name}/spec-original.md`
 - 기존 코드베이스 구조와 패턴
 
 ### 수행
@@ -61,7 +62,7 @@ Codex를 인터뷰어로 사용한다. 한 번에 하나씩 질문하고, 추천
 
 ### 산출물
 
-- `docs/features/{name}/spec-fixed.md`
+- `docs/feature/{name}/spec-fixed.md` 또는 `docs/features/{name}/spec-fixed.md`
 
 ### 승인 게이트
 
@@ -77,13 +78,13 @@ Codex를 인터뷰어로 사용한다. 한 번에 하나씩 질문하고, 추천
 
 ### 입력
 
-- `docs/features/{name}/spec-fixed.md`
-- `docs/features/{name}/design.md`가 있으면 함께 참조
+- `docs/feature/{name}/spec-fixed.md` 또는 `docs/features/{name}/spec-fixed.md`
+- 같은 기능 폴더의 `design.md`가 있으면 함께 참조
 - 기존 코드베이스 패턴
 
 ### PRD 구조
 
-`docs/features/{name}/prd.md`는 다음 구조로 작성한다.
+`prd.md`는 같은 기능 폴더에 다음 구조로 작성한다.
 
 - `개요`: 기능의 목적과 범위.
 - `사용자 스토리`: 사용자 관점의 흐름.
@@ -134,7 +135,7 @@ Codex를 인터뷰어로 사용한다. 한 번에 하나씩 질문하고, 추천
 
 ### 산출물
 
-- `docs/features/{name}/prd.md`
+- 같은 기능 폴더의 `prd.md`
 
 ## 단계 3: 이슈 분해
 
@@ -144,8 +145,8 @@ PRD를 실행 가능한 작업 단위로 변환한다. 각 이슈는 독립적�
 
 ### 입력
 
-- `docs/features/{name}/prd.md`
-- GitHub 등록을 요청받은 경우 프로젝트 보드 정보
+- 같은 기능 폴더의 `prd.md`
+- GitHub 등록을 요청받은 경우 저장소, assignee, label, project board 정보
 
 ### 수직 슬라이싱
 
@@ -179,8 +180,9 @@ Acceptance Criteria는 이후 테스트 시나리오의 기반이 된다.
 
 ### 산출물
 
-- `docs/features/{name}/issues.md`
-- 사용자가 승인한 경우 AC가 포함된 GitHub Issues
+- 같은 기능 폴더의 `issues.md`
+- 상세 이슈 문서가 필요하면 같은 기능 폴더의 `issue/*.md`
+- 사용자가 승인한 경우 `$github-issue-creator`로 등록한 GitHub Issues
 - 사용자가 승인한 경우 프로젝트 보드 Todo 항목
 
 ### 승인 게이트
@@ -191,12 +193,7 @@ Acceptance Criteria는 이후 테스트 시나리오의 기반이 된다.
 
 ## GitHub 등록
 
-사용자가 승인하고 대상 owner, repository, project number, 인증 상태를 확인한 뒤에만 GitHub 명령을 실행한다.
-
-```bash
-gh issue create --title "이슈 제목" --body "설명 + AC + 의존성"
-gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>
-```
+사용자가 승인하고 대상 owner, repository, project number, 인증 상태를 확인한 뒤에만 `$github-issue-creator`를 추가로 사용해 GitHub Issues 등록과 프로젝트 보드 등록을 진행한다.
 
 ## 게이트 요약
 

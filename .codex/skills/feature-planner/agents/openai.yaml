@@ -1,4 +1,4 @@
 interface:
   display_name: 'Feature Planner'
-  short_description: '기능 아이디어를 PRD와 실행 가능한 이슈로 분해'
-  default_prompt: '이 프로젝트에서 기능 아이디어를 spec-fixed.md, prd.md, issues.md, GitHub Issues로 분해할 때 $feature-planner를 사용한다.'
+  short_description: 'Plan a feature into spec-fixed.md, prd.md, and vertical-slice issues'
+  default_prompt: 'Use $feature-planner to turn a feature idea into spec-fixed.md, prd.md, and local issue planning documents.'
