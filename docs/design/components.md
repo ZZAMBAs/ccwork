@@ -58,7 +58,8 @@
 - 생성 또는 편집 상태에서는 흰색 편집 카드 하나를 표시한다.
 - 카드 상단에는 `새 노트` 또는 `노트 편집` 라벨을 표시한다.
 - 제목 입력은 테두리 없는 큰 글자 입력 필드다.
-- 제목과 내용 사이에는 1px 구분선을 둔다.
+- 제목과 내용 사이에는 태그 입력 영역을 두고, 위아래 1px 구분선으로 제목/본문과 분리한다.
+- 태그 입력 영역은 작은 무테 입력, 주요 버튼 패턴의 `추가` 버튼, 태그 칩 목록, 인라인 오류/미추가 안내 상태를 포함한다.
 - 본문 입력은 `rows={14}`, `resize-none`, `leading-relaxed`로 고정된 장문 작성 영역을 제공한다.
 - 하단 버튼 영역은 상단 border로 입력 영역과 분리한다.
 
@@ -72,5 +73,8 @@
 | 섹션 라벨       | `text-xs font-semibold tracking-widest uppercase text-muted-foreground mb-6`                                                                   |
 | 제목 입력       | `w-full text-xl font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/50 mb-4`                   |
 | 구분선          | `h-px bg-border mb-4`                                                                                                                          |
+| 태그 영역       | `mb-4 space-y-2`, 칩 목록 `flex flex-wrap gap-2`, 입력 행 `flex gap-2`                                                                         |
+| 태그 칩         | `inline-flex items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-semibold`                                                           |
+| 태그 입력       | `flex-1 text-sm text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/50`                                  |
 | 내용 입력       | `w-full text-base text-foreground/70 bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/50 leading-relaxed` |
 | 버튼 영역       | `flex gap-3 mt-6 pt-4 border-t border-border`                                                                                                  |

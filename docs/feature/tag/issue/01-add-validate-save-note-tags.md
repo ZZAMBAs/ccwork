@@ -171,7 +171,9 @@ interface TagChipProps {
 - 사용자가 태그를 추가하지 않고 새 노트를 저장하면, 서버에 생성된 노트 데이터에는 `tags: []`가 포함되어야 한다.
 - 사용자가 태그 입력창에 `React`를 입력했지만 추가하지 않은 상태에서 저장을 클릭하면, 서버 저장 요청을 보내지 않고 미추가 태그 안내 모달이 표시되어야 한다.
 - 미추가 태그 안내 모달이 표시된 상태에서 사용자는 입력값을 직접 추가하거나 지운 뒤 다시 저장해야 하며, 모달 안에서 입력값이 자동으로 태그가 되지 않아야 한다.
+- 미추가 태그 안내 모달이 표시되어도 기존에 저장되어 있던 태그 칩은 계속 보여야 하며, 빈 태그 칩이나 빈 삭제 버튼이 나타나지 않아야 한다.
 - 저장이 성공하면, 태그 입력창의 임시 입력값과 인라인 오류는 화면에서 사라져야 한다.
+- 저장이 성공하면, 사용자는 선택 없음 화면으로 이동하지 않고 저장된 노트를 계속 편집 화면에서 볼 수 있어야 한다.
 - 저장 요청이 실패한 상황에서 사용자가 저장을 시도하면, 사용자가 입력한 제목, 본문, 태그 칩이 그대로 유지되고 저장 버튼은 다시 저장을 시도할 수 있는 상태여야 한다.
 - 사용자가 앱을 사용하는 동안 태그 전용 목록이나 태그 전용 CRUD 화면이 새로 나타나지 않아야 한다.
 
@@ -179,49 +181,51 @@ interface TagChipProps {
 
 ### 정상
 
-- [정상] fetchNotes — should return notes with tags arrays when the server response already includes tags
-- [정상] fetchNotes — should return notes with empty tags when the server response omits tags
-- [정상] createNote — should send tags as an empty array when a new note is saved without tags
-- [정상] updateNote — should send changed tags and refresh updatedAt when only tags are changed
-- [정상] normalizeTagName — should trim outer whitespace and collapse inner whitespace when input contains repeated spaces
-- [정상] getTagComparisonKey — should return the same comparison key when tag names differ only by case and repeated spaces
-- [정상] getTagValidationError — should return null when the normalized tag name is valid
-- [정상] parseTagInput — should return separate tags when comma-separated input contains multiple valid tag names
-- [정상] addTagsToList — should add a normalized tag when the user submits a single valid tag
-- [정상] addTagsToList — should add React Query when input is surrounded by spaces and repeated inner spaces
-- [정상] addTagsToList — should keep #React and React as separate tags when both are added
-- [정상] removeTagFromList — should remove only the selected tag when a tag removal is requested
-- [정상] NoteEditor.render — should show the tag input area between the title and content fields when editing or creating a note
-- [정상] NoteEditor.addTag — should render an added tag as a chip when the user presses Enter
-- [정상] NoteEditor.addTag — should render an added tag as a chip when the user clicks the add button
-- [정상] NoteEditor.removeTag — should remove the selected tag chip from the current note draft when the user clicks its remove button
-- [정상] NoteEditor.save — should persist added tags through updateNote when the user saves an existing note
-- [정상] NoteEditor.save — should persist removed tags through updateNote when the user saves an existing note
-- [정상] NoteEditor.save — should clear pending tag input and inline tag errors when save succeeds
+- [x] [정상] fetchNotes — should return notes with tags arrays when the server response already includes tags
+- [x] [정상] fetchNotes — should return notes with empty tags when the server response omits tags
+- [x] [정상] createNote — should send tags as an empty array when a new note is saved without tags
+- [x] [정상] updateNote — should send changed tags and refresh updatedAt when only tags are changed
+- [x] [정상] normalizeTagName — should trim outer whitespace and collapse inner whitespace when input contains repeated spaces
+- [x] [정상] getTagComparisonKey — should return the same comparison key when tag names differ only by case and repeated spaces
+- [x] [정상] getTagValidationError — should return null when the normalized tag name is valid
+- [x] [정상] parseTagInput — should return separate tags when comma-separated input contains multiple valid tag names
+- [x] [정상] addTagsToList — should add a normalized tag when the user submits a single valid tag
+- [x] [정상] addTagsToList — should add React Query when input is surrounded by spaces and repeated inner spaces
+- [x] [정상] addTagsToList — should keep #React and React as separate tags when both are added
+- [x] [정상] removeTagFromList — should remove only the selected tag when a tag removal is requested
+- [x] [정상] NoteEditor.render — should show the tag input area between the title and content fields when editing or creating a note
+- [x] [정상] NoteEditor.addTag — should render an added tag as a chip when the user presses Enter
+- [x] [정상] NoteEditor.addTag — should render an added tag as a chip when the user clicks the add button
+- [x] [정상] NoteEditor.removeTag — should remove the selected tag chip from the current note draft when the user clicks its remove button
+- [x] [정상] NoteEditor.save — should persist added tags through updateNote when the user saves an existing note
+- [x] [정상] NoteEditor.save — should persist removed tags through updateNote when the user saves an existing note
+- [x] [정상] NoteEditor.save — should clear pending tag input and inline tag errors when save succeeds
+- [x] [정상] vite dev server watch — should ignore db.json changes so saving an existing note does not reload the app
 
 ### 경계
 
-- [경계] parseTagInput — should ignore empty fragments when comma-separated input contains consecutive commas and blank fragments
-- [경계] addTagsToList — should merge duplicates into one tag when a single input contains the same comparison key multiple times
-- [경계] addTagsToList — should keep the existing tag list unchanged when input matches an existing tag by comparison key
-- [경계] addTagsToList — should reject the whole addition when adding multiple tags would exceed the max tag count
-- [경계] getTagValidationError — should return too-short when normalized input is shorter than two characters
-- [경계] getTagValidationError — should return too-long when normalized input is longer than twenty characters
-- [경계] getTagValidationError — should return invalid-characters when input contains characters outside the allowed set
-- [경계] NoteEditor.loadNote — should initialize tags as an empty array when the selected persisted note has no tags field
-- [경계] NoteEditor.loadNote — should render invalid persisted tags as warning chips when an existing note contains invalid tag values
-- [경계] NoteEditor.dirtyState — should enable the save button when only tags are added or removed
-- [경계] NoteEditor.save — should send tags as an empty array when a new note is saved without adding tags
-- [경계] TagChip.click — should not navigate or change screens when the user clicks the tag chip body
+- [x] [경계] parseTagInput — should ignore empty fragments when comma-separated input contains consecutive commas and blank fragments
+- [x] [경계] addTagsToList — should merge duplicates into one tag when a single input contains the same comparison key multiple times
+- [x] [경계] addTagsToList — should keep the existing tag list unchanged when input matches an existing tag by comparison key
+- [x] [경계] addTagsToList — should reject the whole addition when adding multiple tags would exceed the max tag count
+- [x] [경계] getTagValidationError — should return too-short when normalized input is shorter than two characters
+- [x] [경계] getTagValidationError — should return too-long when normalized input is longer than twenty characters
+- [x] [경계] getTagValidationError — should return invalid-characters when input contains characters outside the allowed set
+- [x] [경계] NoteEditor.loadNote — should initialize tags as an empty array when the selected persisted note has no tags field
+- [x] [경계] NoteEditor.loadNote — should render invalid persisted tags as warning chips when an existing note contains invalid tag values
+- [x] [경계] NoteEditor.dirtyState — should enable the save button when only tags are added or removed
+- [x] [경계] NoteEditor.save — should send tags as an empty array when a new note is saved without adding tags
+- [x] [경계] TagChip.click — should not navigate or change screens when the user clicks the tag chip body
 
 ### 예외
 
-- [예외] addTagsToList — should return the first validation error and keep current tags unchanged when any submitted tag is invalid
-- [예외] NoteEditor.addTag — should show the first inline validation error and keep the tag list unchanged when invalid input is submitted
-- [예외] NoteEditor.save — should not call createNote or updateNote and should show pending-tag guidance when tag input has unadded text
-- [예외] NoteEditor.pendingTagModal — should not automatically convert pending input into a tag when the pending-tag guidance is shown
-- [예외] NoteEditor.save — should preserve title, content, tag chips, and retryable save state when the save request fails
-- [예외] NotesContext — should expose tag changes only through existing note CRUD actions when the tag feature is used
+- [x] [예외] addTagsToList — should return the first validation error and keep current tags unchanged when any submitted tag is invalid
+- [x] [예외] NoteEditor.addTag — should show the first inline validation error and keep the tag list unchanged when invalid input is submitted
+- [x] [예외] NoteEditor.save — should not call createNote or updateNote and should show pending-tag guidance when tag input has unadded text
+- [x] [예외] NoteEditor.pendingTagModal — should not automatically convert pending input into a tag when the pending-tag guidance is shown
+- [x] [예외] NoteEditor.pendingTagModal — should keep existing tag chips visible and avoid empty tag chips when pending-tag guidance is shown
+- [x] [예외] NoteEditor.save — should preserve title, content, tag chips, and retryable save state when the save request fails
+- [x] [예외] NotesContext — should expose tag changes only through existing note CRUD actions when the tag feature is used
 
 ### AC 커버리지 요약
 
