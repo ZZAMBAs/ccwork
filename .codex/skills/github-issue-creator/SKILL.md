@@ -29,7 +29,10 @@ description: Notes App 프로젝트 로컬 GitHub Issues 등록 워크플로우.
 사용자가 이슈 내용을 직접 설명했다면 문서 산출물을 만들지 말고 GitHub Issue 등록을 준비한다.
 
 1. `git remote -v` 또는 사용자 입력으로 대상 owner/repository를 확인한다.
-2. 제목은 `{header}: {title}` 형식으로 만든다.
+2. 제목은 `[category-N] {header}: {title}` 형식으로 만든다.
+   - `category`와 `N`은 사용자가 명시해야 한다.
+   - 둘 중 하나라도 없으면 추정하지 말고 전체적 분류와 이슈 번호를 물어본 뒤 등록을 중단한다.
+   - 예: 전체적 분류가 `tag`, 이슈 번호가 `1`이면 `[tag-1] feat: 노트에 태그를 추가, 검증, 저장하기`.
    - 사용자가 header를 명시하면 그대로 사용한다.
    - 명시가 없으면 기능 추가는 `feat`, 버그는 `fix`, 문서는 `docs`, 리팩터링은 `refactor`, 테스트는 `test`, 설정/도구는 `chore`를 선택한다.
 3. 본문은 다음 구조를 사용한다.
@@ -54,7 +57,12 @@ description: Notes App 프로젝트 로컬 GitHub Issues 등록 워크플로우.
    - `설명` -> `## 구현 참고`
    - `Acceptance Criteria` -> `## Acceptance Criteria`
 6. AC는 GitHub 체크리스트로 변환한다. 이미 체크리스트면 유지하고, 일반 목록이면 `- [ ]`로 바꾼다.
-7. 제목은 `{header}: {title}` 형식으로 만든다. 별도 요청이 없으면 기능 추가 이슈는 `feat`를 사용한다.
+7. 제목은 `[category-N] {header}: {title}` 형식으로 만든다. 별도 요청이 없으면 기능 추가 이슈는 `feat`를 사용한다.
+   - `category`는 `docs/feature/{name}` 또는 `docs/features/{name}`의 `{name}`을 사용한다.
+   - `N`은 상세 이슈 문서 파일명의 선행 번호를 사용하고 앞자리 `0`은 제거한다. 예: `issue/01-add-validate-save-note-tags.md` -> `1`.
+   - `issues.md` 링크 순서가 아니라 상세 문서 파일명 번호를 우선한다.
+   - 상세 문서 번호를 찾을 수 없으면 등록 전 개발자에게 확인한다.
+   - 예: `docs/feature/tag/issue/01-add-validate-save-note-tags.md`는 `[tag-1] feat: 노트에 태그를 추가, 검증, 저장하기` 형식으로 등록한다.
 
 ## GitHub 등록 규칙
 

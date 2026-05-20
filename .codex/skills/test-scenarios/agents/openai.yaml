@@ -1,0 +1,7 @@
+interface:
+  display_name: "Test Scenarios"
+  short_description: "이슈별 시그니처와 테스트 시나리오 작성"
+  default_prompt: "Use $test-scenarios with /test-scenarios <issue-number> to prepare issue signatures and test scenarios."
+
+policy:
+  allow_implicit_invocation: true
