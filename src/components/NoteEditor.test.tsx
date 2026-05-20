@@ -229,10 +229,27 @@ describe('NoteEditor.pendingTagModal', () => {
     const user = userEvent.setup();
     await renderEditor();
 
-    await user.type(screen.getByRole('textbox', { name: /tag/i }), 'React');
+    await user.type(screen.getByRole('textbox', { name: /tag/i }), 'Vue');
     await user.click(screen.getByRole('button', { name: /save|저장/i }));
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.queryByTestId('tag-chip')).not.toHaveTextContent('React');
+    expect(screen.getByText('React')).toBeInTheDocument();
+    expect(screen.queryByText('Vue')).not.toBeInTheDocument();
+  });
+
+  it('should keep existing tag chips visible and avoid empty tag chips when pending-tag guidance is shown', async () => {
+    const user = userEvent.setup();
+    await renderEditor({ selectedNote: note({ tags: ['React', 'TypeScript'] }) });
+
+    await user.type(screen.getByRole('textbox', { name: /tag/i }), 'Vue');
+    await user.click(screen.getByRole('button', { name: /save|저장/i }));
+
+    const tagChips = screen.getAllByTestId('tag-chip');
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('React')).toBeInTheDocument();
+    expect(screen.getByText('TypeScript')).toBeInTheDocument();
+    expect(tagChips).toHaveLength(2);
+    tagChips.forEach((chip) => expect(chip).not.toHaveTextContent(/^×?$/));
   });
 });
