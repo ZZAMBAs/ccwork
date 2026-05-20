@@ -18,9 +18,11 @@ function App() {
     setIsCreating(true);
   };
 
-  const handleDone = () => {
+  const handleDone = (savedNoteId?: string) => {
     setIsCreating(false);
-    // 저장 후 선택 상태는 유지
+    if (savedNoteId) {
+      setSelectedNoteId(savedNoteId);
+    }
   };
 
   return (
@@ -29,11 +31,7 @@ function App() {
         onNewNote={handleNewNote}
         sidebar={<NoteList selectedNoteId={selectedNoteId} onSelect={handleSelectNote} />}
         main={
-          <NoteEditor
-            selectedNoteId={selectedNoteId}
-            isCreating={isCreating}
-            onDone={handleDone}
-          />
+          <NoteEditor selectedNoteId={selectedNoteId} isCreating={isCreating} onDone={handleDone} />
         }
       />
     </NotesProvider>
