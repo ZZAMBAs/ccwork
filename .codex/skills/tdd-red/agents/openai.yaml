@@ -1,0 +1,7 @@
+interface:
+  display_name: "TDD Red"
+  short_description: "승인된 시나리오를 실패 테스트로 작성하기"
+  default_prompt: "Use $tdd-red with /tdd-red <category-issueNumber> to write failing tests from approved scenarios."
+
+policy:
+  allow_implicit_invocation: true
