@@ -1,5 +1,136 @@
 # Issue 1. 노트에 태그를 추가, 검증, 저장하기
 
+## 확정 시그니처
+
+### 도메인 타입
+
+```ts
+// src/types/note.ts
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// src/types/tag.ts
+export type TagValidationErrorCode = 'too-short' | 'too-long' | 'invalid-characters' | 'too-many';
+
+export interface TagValidationError {
+  code: TagValidationErrorCode;
+  message: string;
+}
+
+export interface TagParseResult {
+  tags: string[];
+  errors: TagValidationError[];
+}
+```
+
+### 태그 순수 함수
+
+```ts
+// src/utils/tags.ts
+export function normalizeTagName(input: string): string;
+
+export function getTagComparisonKey(tagName: string): string;
+
+export function getTagValidationError(tagName: string): TagValidationError | null;
+
+export function parseTagInput(input: string): TagParseResult;
+
+export function addTagsToList(
+  currentTags: string[],
+  input: string,
+  maxTags?: number,
+): TagParseResult;
+
+export function removeTagFromList(currentTags: string[], tagName: string): string[];
+
+export function hasPendingTagInput(input: string): boolean;
+```
+
+### API
+
+```ts
+// src/api/notes.ts
+export async function fetchNotes(): Promise<Note[]>;
+
+export async function createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Promise<Note>;
+
+export async function updateNote(id: string, updates: Partial<Note>): Promise<Note>;
+
+export async function deleteNote(id: string): Promise<void>;
+```
+
+- `fetchNotes`, `createNote`, `updateNote` 응답은 클라이언트 반환 전에 `tags`가 없으면 `[]`로 보정한다.
+- `createNote` 호출자는 항상 `tags: string[]`를 전달한다.
+- `updateNote`는 기존처럼 `updatedAt`을 요청 직전에 갱신한다.
+- `res.ok`가 아니면 기존 패턴대로 `Error`를 throw한다.
+
+### Context
+
+```ts
+interface NotesContextType {
+  notes: Note[];
+  loading: boolean;
+  error: string | null;
+  createNote: (title: string, content: string, tags?: string[]) => Promise<void>;
+  updateNote: (id: string, updates: Partial<Note>) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
+}
+```
+
+- `createNote`는 기존 호출 호환을 위해 `tags = []` 기본값을 둔다.
+- 별도 태그 리소스나 태그 전용 Context 액션은 만들지 않는다.
+- 상태 갱신은 기존처럼 API 성공 응답값 기준으로 한다.
+
+### 컴포넌트 Props
+
+```ts
+// src/components/NoteEditor.tsx
+interface NoteEditorProps {
+  selectedNoteId: string | null;
+  isCreating: boolean;
+  onDone: () => void;
+}
+
+// src/components/TagInput.tsx
+interface TagInputProps {
+  tags: string[];
+  value: string;
+  error: TagValidationError | null;
+  invalidPersistedTags?: string[];
+  disabled?: boolean;
+  onChange: (value: string) => void;
+  onAdd: () => void;
+  onRemove: (tagName: string) => void;
+}
+
+// src/components/TagChip.tsx
+interface TagChipProps {
+  tagName: string;
+  variant?: 'default' | 'warning';
+  onRemove?: (tagName: string) => void;
+}
+```
+
+### 에러 케이스와 편집 상태
+
+- `getTagValidationError`는 정규화 후 2자 미만이면 `too-short`, 20자 초과면 `too-long`, 허용 문자 밖의 문자가 있으면 `invalid-characters`를 반환한다.
+- `getTagValidationError`는 검증 오류가 없으면 `null`을 반환한다.
+- `parseTagInput`은 빈 조각과 공백 조각을 오류 없이 무시한다.
+- `addTagsToList`는 현재 태그와 신규 태그의 비교 키가 같으면 중복으로 보고 추가하지 않으며 오류도 반환하지 않는다.
+- `addTagsToList`는 실제 신규 추가분을 반영했을 때 `maxTags`를 초과하면 아무 태그도 추가하지 않고 `too-many`를 반환한다.
+- `NoteEditor`는 `title`, `content`, `tags`, `tagInput`, `tagError`, `saving`을 로컬 상태로 둔다.
+- 선택 노트 변경 시 `tags`는 `selectedNote.tags ?? []`로 초기화한다.
+- 생성 상태 초기화 시 `tags: []`로 둔다.
+- 저장 시 `tagInput`에 미추가 텍스트가 있으면 API 요청을 보내지 않고 안내 모달 또는 상태를 띄운다.
+- 저장 성공 시 `tagInput`과 `tagError`를 초기화한다.
+- 저장 실패 시 기존 입력값과 dirty 상태를 유지한다.
+
 ## 목표
 
 사용자가 노트 편집 화면에서 태그를 추가, 검증, 삭제, 저장할 수 있게 한다.
@@ -43,3 +174,62 @@
 - 저장이 성공하면, 태그 입력창의 임시 입력값과 인라인 오류는 화면에서 사라져야 한다.
 - 저장 요청이 실패한 상황에서 사용자가 저장을 시도하면, 사용자가 입력한 제목, 본문, 태그 칩이 그대로 유지되고 저장 버튼은 다시 저장을 시도할 수 있는 상태여야 한다.
 - 사용자가 앱을 사용하는 동안 태그 전용 목록이나 태그 전용 CRUD 화면이 새로 나타나지 않아야 한다.
+
+## 테스트 시나리오
+
+### 정상
+
+- [정상] fetchNotes — should return notes with tags arrays when the server response already includes tags
+- [정상] fetchNotes — should return notes with empty tags when the server response omits tags
+- [정상] createNote — should send tags as an empty array when a new note is saved without tags
+- [정상] updateNote — should send changed tags and refresh updatedAt when only tags are changed
+- [정상] normalizeTagName — should trim outer whitespace and collapse inner whitespace when input contains repeated spaces
+- [정상] getTagComparisonKey — should return the same comparison key when tag names differ only by case and repeated spaces
+- [정상] getTagValidationError — should return null when the normalized tag name is valid
+- [정상] parseTagInput — should return separate tags when comma-separated input contains multiple valid tag names
+- [정상] addTagsToList — should add a normalized tag when the user submits a single valid tag
+- [정상] addTagsToList — should add React Query when input is surrounded by spaces and repeated inner spaces
+- [정상] addTagsToList — should keep #React and React as separate tags when both are added
+- [정상] removeTagFromList — should remove only the selected tag when a tag removal is requested
+- [정상] NoteEditor.render — should show the tag input area between the title and content fields when editing or creating a note
+- [정상] NoteEditor.addTag — should render an added tag as a chip when the user presses Enter
+- [정상] NoteEditor.addTag — should render an added tag as a chip when the user clicks the add button
+- [정상] NoteEditor.removeTag — should remove the selected tag chip from the current note draft when the user clicks its remove button
+- [정상] NoteEditor.save — should persist added tags through updateNote when the user saves an existing note
+- [정상] NoteEditor.save — should persist removed tags through updateNote when the user saves an existing note
+- [정상] NoteEditor.save — should clear pending tag input and inline tag errors when save succeeds
+
+### 경계
+
+- [경계] parseTagInput — should ignore empty fragments when comma-separated input contains consecutive commas and blank fragments
+- [경계] addTagsToList — should merge duplicates into one tag when a single input contains the same comparison key multiple times
+- [경계] addTagsToList — should keep the existing tag list unchanged when input matches an existing tag by comparison key
+- [경계] addTagsToList — should reject the whole addition when adding multiple tags would exceed the max tag count
+- [경계] getTagValidationError — should return too-short when normalized input is shorter than two characters
+- [경계] getTagValidationError — should return too-long when normalized input is longer than twenty characters
+- [경계] getTagValidationError — should return invalid-characters when input contains characters outside the allowed set
+- [경계] NoteEditor.loadNote — should initialize tags as an empty array when the selected persisted note has no tags field
+- [경계] NoteEditor.loadNote — should render invalid persisted tags as warning chips when an existing note contains invalid tag values
+- [경계] NoteEditor.dirtyState — should enable the save button when only tags are added or removed
+- [경계] NoteEditor.save — should send tags as an empty array when a new note is saved without adding tags
+- [경계] TagChip.click — should not navigate or change screens when the user clicks the tag chip body
+
+### 예외
+
+- [예외] addTagsToList — should return the first validation error and keep current tags unchanged when any submitted tag is invalid
+- [예외] NoteEditor.addTag — should show the first inline validation error and keep the tag list unchanged when invalid input is submitted
+- [예외] NoteEditor.save — should not call createNote or updateNote and should show pending-tag guidance when tag input has unadded text
+- [예외] NoteEditor.pendingTagModal — should not automatically convert pending input into a tag when the pending-tag guidance is shown
+- [예외] NoteEditor.save — should preserve title, content, tag chips, and retryable save state when the save request fails
+- [예외] NotesContext — should expose tag changes only through existing note CRUD actions when the tag feature is used
+
+### AC 커버리지 요약
+
+- GitHub MCP로 `ZZAMBAs/ccwork#1`을 조회했지만 해당 번호는 AC 본문이 없는 닫힌 PR이었다. `gh` CLI도 로컬에 설치되어 있지 않아, AC 대조는 이 로컬 이슈 문서의 Acceptance Criteria 기준으로 수행했다.
+- 과거 노트의 `tags` 누락 보정은 `fetchNotes`, `NoteEditor.loadNote` 시나리오로 커버한다.
+- 태그 입력 영역 표시, Enter/추가 버튼, 칩 표시, 삭제, 칩 본문 클릭은 `NoteEditor.render`, `NoteEditor.addTag`, `NoteEditor.removeTag`, `TagChip.click` 시나리오로 커버한다.
+- 공백 정규화, 대소문자 중복, `#React` 구분, 쉼표 분리, 빈 조각 무시는 `normalizeTagName`, `getTagComparisonKey`, `parseTagInput`, `addTagsToList` 시나리오로 커버한다.
+- 최소 길이, 최대 길이, 허용 문자, 최대 5개 제한, 첫 오류 표시는 `getTagValidationError`, `addTagsToList`, `NoteEditor.addTag` 시나리오로 커버한다.
+- 저장 시 태그 추가/삭제 반영, 태그만 변경 시 저장 버튼 활성화, `updatedAt` 갱신, 새 노트 `tags: []`, 저장 성공 초기화는 `NoteEditor.save`, `updateNote`, `createNote` 시나리오로 커버한다.
+- 미추가 태그 안내, 안내 상태에서 자동 추가 금지, 저장 실패 시 입력 유지는 `NoteEditor.save`, `NoteEditor.pendingTagModal` 시나리오로 커버한다.
+- 태그 전용 목록이나 CRUD 화면을 만들지 않는 조건은 `NotesContext` 시나리오로 커버한다.
