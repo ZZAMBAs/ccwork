@@ -196,11 +196,14 @@ interface TagChipProps {
 - [x] [정상] NoteEditor.render — should show the tag input area between the title and content fields when editing or creating a note
 - [x] [정상] NoteEditor.addTag — should render an added tag as a chip when the user presses Enter
 - [x] [정상] NoteEditor.addTag — should render an added tag as a chip when the user clicks the add button
+- [x] [정상] NoteEditor.addTag — should render a newly added tag as a chip when the selected note starts with no tags and the user presses Enter
+- [x] [정상] NoteEditor.addTag — should render a newly added tag as a chip when the selected note starts with no tags and the user clicks the add button
 - [x] [정상] NoteEditor.removeTag — should remove the selected tag chip from the current note draft when the user clicks its remove button
 - [x] [정상] NoteEditor.save — should persist added tags through updateNote when the user saves an existing note
 - [x] [정상] NoteEditor.save — should persist removed tags through updateNote when the user saves an existing note
 - [x] [정상] NoteEditor.save — should clear pending tag input and inline tag errors when save succeeds
 - [x] [정상] vite dev server watch — should ignore db.json changes so saving an existing note does not reload the app
+- [x] [정상] App.save — should keep the saved existing note selected and visible after save succeeds
 
 ### 경계
 
@@ -213,6 +216,7 @@ interface TagChipProps {
 - [x] [경계] getTagValidationError — should return invalid-characters when input contains characters outside the allowed set
 - [x] [경계] NoteEditor.loadNote — should initialize tags as an empty array when the selected persisted note has no tags field
 - [x] [경계] NoteEditor.loadNote — should render invalid persisted tags as warning chips when an existing note contains invalid tag values
+- [x] [경계] NoteEditor.loadNote — should not render fallback tag chips when selectedNoteId exists but the selected note is not loaded
 - [x] [경계] NoteEditor.dirtyState — should enable the save button when only tags are added or removed
 - [x] [경계] NoteEditor.save — should send tags as an empty array when a new note is saved without adding tags
 - [x] [경계] TagChip.click — should not navigate or change screens when the user clicks the tag chip body
@@ -221,6 +225,7 @@ interface TagChipProps {
 
 - [x] [예외] addTagsToList — should return the first validation error and keep current tags unchanged when any submitted tag is invalid
 - [x] [예외] NoteEditor.addTag — should show the first inline validation error and keep the tag list unchanged when invalid input is submitted
+- [x] [예외] NoteEditor.addTag — should keep existing tag chips unchanged when invalid tag input is submitted
 - [x] [예외] NoteEditor.save — should not call createNote or updateNote and should show pending-tag guidance when tag input has unadded text
 - [x] [예외] NoteEditor.pendingTagModal — should not automatically convert pending input into a tag when the pending-tag guidance is shown
 - [x] [예외] NoteEditor.pendingTagModal — should keep existing tag chips visible and avoid empty tag chips when pending-tag guidance is shown
