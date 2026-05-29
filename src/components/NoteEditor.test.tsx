@@ -84,6 +84,27 @@ describe('NoteEditor.addTag', () => {
     expect(screen.getByText('React')).toBeInTheDocument();
   });
 
+  it('should render a newly added tag as a chip when the selected note starts with no tags and the user presses Enter', async () => {
+    const user = userEvent.setup();
+    await renderEditor({ selectedNote: note({ tags: [] }) });
+
+    await user.type(screen.getByRole('textbox', { name: /tag/i }), 'Vue{Enter}');
+
+    expect(screen.getByText('Vue')).toBeInTheDocument();
+    expect(screen.getAllByTestId('tag-chip')).toHaveLength(1);
+  });
+
+  it('should render a newly added tag as a chip when the selected note starts with no tags and the user clicks the add button', async () => {
+    const user = userEvent.setup();
+    await renderEditor({ selectedNote: note({ tags: [] }) });
+
+    await user.type(screen.getByRole('textbox', { name: /tag/i }), 'Vue');
+    await user.click(screen.getByRole('button', { name: /add|추가/i }));
+
+    expect(screen.getByText('Vue')).toBeInTheDocument();
+    expect(screen.getAllByTestId('tag-chip')).toHaveLength(1);
+  });
+
   it('should show the first inline validation error and keep the tag list unchanged when invalid input is submitted', async () => {
     const user = userEvent.setup();
     await renderEditor();
@@ -92,6 +113,18 @@ describe('NoteEditor.addTag', () => {
 
     expect(screen.getByText(/최소|too short/i)).toBeInTheDocument();
     expect(screen.queryByText('R')).not.toBeInTheDocument();
+  });
+
+  it('should keep existing tag chips unchanged when invalid tag input is submitted', async () => {
+    const user = userEvent.setup();
+    await renderEditor({ selectedNote: note({ tags: ['React', 'TypeScript'] }) });
+
+    await user.type(screen.getByRole('textbox', { name: /tag/i }), 'R{Enter}');
+
+    expect(screen.getByText(/최소|too short/i)).toBeInTheDocument();
+    expect(screen.getByText('React')).toBeInTheDocument();
+    expect(screen.getByText('TypeScript')).toBeInTheDocument();
+    expect(screen.getAllByTestId('tag-chip')).toHaveLength(2);
   });
 });
 
@@ -122,6 +155,24 @@ describe('NoteEditor.loadNote', () => {
     await renderEditor({ selectedNote: note({ tags: ['R'] }) });
 
     expect(screen.getByText('R')).toHaveAttribute('data-variant', 'warning');
+  });
+
+  it('should not render fallback tag chips when selectedNoteId exists but the selected note is not loaded', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
+
+    render(
+      <NotesProvider>
+        <NoteEditor selectedNoteId="1" isCreating={false} onDone={vi.fn()} />
+      </NotesProvider>,
+    );
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    expect(screen.queryByText('React')).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId('tag-chip')).toHaveLength(0);
   });
 });
 
