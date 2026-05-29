@@ -19,7 +19,6 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
   const [tagError, setTagError] = useState<TagValidationError | null>(null);
   const [showPendingTagDialog, setShowPendingTagDialog] = useState(false);
   const [hasEditedTags, setHasEditedTags] = useState(false);
-  const [removedFallbackTags, setRemovedFallbackTags] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   const selectedNote = notes.find((n) => n.id === selectedNoteId);
@@ -34,7 +33,6 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
       setTagError(null);
       setShowPendingTagDialog(false);
       setHasEditedTags(false);
-      setRemovedFallbackTags([]);
     } else if (isCreating) {
       setTitle('');
       setContent('');
@@ -43,7 +41,6 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
       setTagError(null);
       setShowPendingTagDialog(false);
       setHasEditedTags(false);
-      setRemovedFallbackTags([]);
     }
   }, [selectedNote, isCreating]);
 
@@ -70,9 +67,6 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
   };
 
   const handleRemoveTag = (tagName: string) => {
-    if (!selectedNote) {
-      setRemovedFallbackTags((prev) => [...prev, tagName]);
-    }
     setTags((prev) => prev.filter((tag) => tag !== tagName));
     setHasEditedTags(true);
     setShowPendingTagDialog(false);
@@ -86,9 +80,7 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
         ? hasEditedTags
           ? tags
           : (selectedNote.tags ?? [])
-        : selectedNoteId && !removedFallbackTags.includes('React')
-          ? ['React']
-          : tags;
+        : tags;
 
   const handleSave = async () => {
     if (!title.trim()) {
