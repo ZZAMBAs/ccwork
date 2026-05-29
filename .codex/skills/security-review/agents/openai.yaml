@@ -1,0 +1,4 @@
+interface:
+  display_name: "Security Review"
+  short_description: "커밋 전 타입 오류와 보안 취약점을 분류 점검"
+  default_prompt: "Use $security-review with issue identifier <category>-<issue-number> to classify type and security findings before commit."
