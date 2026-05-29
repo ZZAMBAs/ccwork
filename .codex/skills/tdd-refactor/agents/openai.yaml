@@ -1,0 +1,4 @@
+interface:
+  display_name: "TDD Refactor"
+  short_description: "테스트 통과를 유지하며 코드 구조를 안전하게 개선"
+  default_prompt: "Use $tdd-refactor with issue identifier <category>-<issue-number> to improve code structure while keeping tests green."
