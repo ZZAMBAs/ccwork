@@ -61,6 +61,8 @@ interface TagAutocompleteProps {
 - 여러 후보가 일치하면, 사용자는 더 짧게 일치하는 태그, 사용 빈도가 높은 태그, 최근 사용된 태그 순서로 후보를 보아야 한다.
 - 사용자가 자동완성 후보를 클릭하면, 해당 후보가 즉시 현재 노트의 태그 칩으로 추가되어야 한다.
 - 사용자가 키보드로 자동완성 후보를 선택하면, 해당 후보가 즉시 현재 노트의 태그 칩으로 추가되어야 한다.
+- 사용자가 자동완성 후보가 표시된 상태에서 `Escape`를 누르면, 입력값은 유지되고 자동완성 목록만 닫혀야 한다.
+- 사용자가 자동완성 후보가 표시된 상태에서 태그 입력 영역 밖을 클릭하면, 입력값은 유지되고 자동완성 목록만 닫혀야 한다.
 - 자동완성으로 태그를 추가한 뒤 사용자가 저장 버튼을 클릭하면, 서버에 저장된 해당 노트 데이터의 `tags`에 선택한 태그가 포함되어야 한다.
 
 ## 테스트 시나리오
@@ -79,4 +81,8 @@ interface TagAutocompleteProps {
 - [x] [정상] NoteEditor.selectAutocompleteSuggestion — should add the clicked suggestion as a local tag chip when the user clicks an autocomplete suggestion
 - [x] [정상] NoteEditor.selectAutocompleteSuggestion — should add the active suggestion as a local tag chip when the user selects an autocomplete suggestion with the keyboard
 - [x] [예외] NoteEditor.selectAutocompleteSuggestion — should show the existing inline max-tag error and keep tags unchanged when selecting a suggestion would exceed five tags
+- [x] [정상] NoteEditor.autocomplete — should close suggestions and preserve input when the user presses Escape
+- [x] [정상] NoteEditor.autocomplete — should close suggestions and preserve input when the user clicks outside the tag input area
+- [x] [정상] NoteEditor.autocomplete — should show suggestions again when the user changes input after closing suggestions
+- [x] [경계] NoteEditor.autocomplete — should add typed input instead of hidden suggestions when the user presses ArrowDown and Enter after closing suggestions
 - [x] [정상] NoteEditor.save — should persist a tag selected from autocomplete when the user clicks save

@@ -56,6 +56,65 @@ describe('NoteEditor.autocomplete', () => {
 
     expect(screen.getByRole('button', { name: 'React' })).toBeInTheDocument();
   });
+
+  it('should close suggestions and preserve input when the user presses Escape', async () => {
+    const user = userEvent.setup();
+    await renderAutocompleteEditor({
+      notes: [note(), note({ id: '2', tags: ['React'] })],
+    });
+    const tagInput = screen.getByRole('textbox', { name: /tag/i });
+
+    await user.type(tagInput, 're');
+    await user.keyboard('{Escape}');
+
+    expect(tagInput).toHaveValue('re');
+    expect(screen.queryByRole('button', { name: 'React' })).not.toBeInTheDocument();
+  });
+
+  it('should close suggestions and preserve input when the user clicks outside the tag input area', async () => {
+    const user = userEvent.setup();
+    await renderAutocompleteEditor({
+      notes: [note(), note({ id: '2', tags: ['React'] })],
+    });
+    const tagInput = screen.getByRole('textbox', { name: /tag/i });
+
+    await user.type(tagInput, 're');
+    await user.click(document.body);
+
+    expect(tagInput).toHaveValue('re');
+    expect(screen.queryByRole('button', { name: 'React' })).not.toBeInTheDocument();
+  });
+
+  it('should show suggestions again when the user changes input after closing suggestions', async () => {
+    const user = userEvent.setup();
+    await renderAutocompleteEditor({
+      notes: [note(), note({ id: '2', tags: ['React'] })],
+    });
+    const tagInput = screen.getByRole('textbox', { name: /tag/i });
+
+    await user.type(tagInput, 'r');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('button', { name: 'React' })).not.toBeInTheDocument();
+
+    await user.type(tagInput, 'e');
+
+    expect(screen.getByRole('button', { name: 'React' })).toBeInTheDocument();
+  });
+
+  it('should add typed input instead of hidden suggestions when the user presses ArrowDown and Enter after closing suggestions', async () => {
+    const user = userEvent.setup();
+    await renderAutocompleteEditor({
+      notes: [note(), note({ id: '2', tags: ['React'] })],
+    });
+    const tagInput = screen.getByRole('textbox', { name: /tag/i });
+
+    await user.type(tagInput, 're');
+    await user.keyboard('{Escape}{ArrowDown}{Enter}');
+
+    expect(tagInput).toHaveValue('');
+    expect(screen.getByTestId('tag-chip')).toHaveTextContent('re');
+    expect(screen.getByTestId('tag-chip')).not.toHaveTextContent('React');
+  });
 });
 
 describe('NoteEditor.selectAutocompleteSuggestion', () => {
