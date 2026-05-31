@@ -9,3 +9,10 @@ export interface TagParseResult {
   tags: string[];
   errors: TagValidationError[];
 }
+
+export interface TagAutocompleteCandidate {
+  comparisonKey: string;
+  tagName: string;
+  usageCount: number;
+  latestUpdatedAt: string;
+}

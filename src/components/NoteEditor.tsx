@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNotes } from '../context/NotesContext';
+import { TagAutocomplete } from './TagAutocomplete';
 import { TagChip } from './TagChip';
-import { addTagsToList, getTagValidationError, hasPendingTagInput } from '../utils/tags';
+import {
+  addTagsToList,
+  collectTagAutocompleteCandidates,
+  getTagAutocompleteSuggestions,
+  getTagValidationError,
+  hasPendingTagInput,
+} from '../utils/tags';
 import type { TagValidationError } from '../types/tag';
 
 interface NoteEditorProps {
@@ -20,8 +27,14 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
   const [showPendingTagDialog, setShowPendingTagDialog] = useState(false);
   const [hasEditedTags, setHasEditedTags] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 
   const selectedNote = notes.find((n) => n.id === selectedNoteId);
+  const autocompleteCandidates = useMemo(() => collectTagAutocompleteCandidates(notes), [notes]);
+  const suggestions = useMemo(
+    () => getTagAutocompleteSuggestions(autocompleteCandidates, tagInput, tags),
+    [autocompleteCandidates, tagInput, tags],
+  );
 
   // 선택된 노트가 바뀔 때 폼 동기화
   useEffect(() => {
@@ -33,6 +46,7 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
       setTagError(null);
       setShowPendingTagDialog(false);
       setHasEditedTags(false);
+      setActiveSuggestionIndex(-1);
     } else if (isCreating) {
       setTitle('');
       setContent('');
@@ -41,14 +55,19 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
       setTagError(null);
       setShowPendingTagDialog(false);
       setHasEditedTags(false);
+      setActiveSuggestionIndex(-1);
     }
   }, [selectedNote, isCreating]);
 
-  const handleAddTag = () => {
-    const result = addTagsToList(tags, tagInput);
+  const handleAddTag = (input = tagInput) => {
+    const result = addTagsToList(tags, input);
 
     if (result.errors.length > 0) {
       setTagError(result.errors[0]);
+      if (input !== tagInput) {
+        setTagInput('');
+        setActiveSuggestionIndex(-1);
+      }
       return;
     }
 
@@ -57,11 +76,28 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
     setTagInput('');
     setTagError(null);
     setShowPendingTagDialog(false);
+    setActiveSuggestionIndex(-1);
   };
 
   const handleTagKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' && suggestions.length > 0) {
+      event.preventDefault();
+      setActiveSuggestionIndex((current) => (current + 1) % suggestions.length);
+      return;
+    }
+
+    if (event.key === 'ArrowUp' && suggestions.length > 0) {
+      event.preventDefault();
+      setActiveSuggestionIndex((current) => (current <= 0 ? suggestions.length - 1 : current - 1));
+      return;
+    }
+
     if (event.key === 'Enter') {
       event.preventDefault();
+      if (activeSuggestionIndex >= 0) {
+        handleAddTag(suggestions[activeSuggestionIndex].tagName);
+        return;
+      }
       handleAddTag();
     }
   };
@@ -169,6 +205,7 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
               setTagInput(e.target.value);
               setTagError(null);
               setShowPendingTagDialog(false);
+              setActiveSuggestionIndex(-1);
             }}
             onKeyDown={handleTagKeyDown}
             placeholder="태그"
@@ -176,13 +213,18 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
           />
           <button
             type="button"
-            onClick={handleAddTag}
+            onClick={() => handleAddTag()}
             disabled={saving}
             className="bg-foreground text-card px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-75 transition-opacity disabled:opacity-40 cursor-pointer"
           >
             추가
           </button>
         </div>
+        <TagAutocomplete
+          suggestions={suggestions}
+          activeIndex={activeSuggestionIndex}
+          onSelect={handleAddTag}
+        />
         {tagError ? (
           <p role="alert" className="text-xs text-destructive">
             {tagError.message}

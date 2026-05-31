@@ -65,16 +65,16 @@ interface TagAutocompleteProps {
 
 ## 테스트 시나리오
 
-- [정상] collectTagAutocompleteCandidates — should aggregate saved valid tags by comparison key when notes contain reusable tags
-- [경계] collectTagAutocompleteCandidates — should exclude invalid persisted tags when notes contain invalid tag values
-- [경계] collectTagAutocompleteCandidates — should choose the most frequently used notation and then the most recently used notation when the same comparison key has multiple notations
-- [정상] getTagAutocompleteSuggestions — should return prefix-matching suggestions without case sensitivity when input is `re`
-- [경계] getTagAutocompleteSuggestions — should exclude suggestions already attached to the current note when comparison keys match
-- [경계] getTagAutocompleteSuggestions — should return at most three suggestions when more than three candidates match
-- [경계] getTagAutocompleteSuggestions — should order suggestions by shorter tag name, higher usage count, and more recent usage when multiple candidates match
-- [경계] getTagAutocompleteSuggestions — should return an empty list when normalized input is empty
-- [정상] NoteEditor.autocomplete — should show suggestions derived from saved notes when the user starts typing a matching prefix
-- [정상] NoteEditor.selectAutocompleteSuggestion — should add the clicked suggestion as a local tag chip when the user clicks an autocomplete suggestion
-- [정상] NoteEditor.selectAutocompleteSuggestion — should add the active suggestion as a local tag chip when the user selects an autocomplete suggestion with the keyboard
-- [예외] NoteEditor.selectAutocompleteSuggestion — should show the existing inline max-tag error and keep tags unchanged when selecting a suggestion would exceed five tags
-- [정상] NoteEditor.save — should persist a tag selected from autocomplete when the user clicks save
+- [x] [정상] collectTagAutocompleteCandidates — should aggregate saved valid tags by comparison key when notes contain reusable tags
+- [x] [경계] collectTagAutocompleteCandidates — should exclude invalid persisted tags when notes contain invalid tag values
+- [x] [경계] collectTagAutocompleteCandidates — should choose the most frequently used notation and then the most recently used notation when the same comparison key has multiple notations
+- [x] [정상] getTagAutocompleteSuggestions — should return prefix-matching suggestions without case sensitivity when input is `re`
+- [x] [경계] getTagAutocompleteSuggestions — should exclude suggestions already attached to the current note when comparison keys match
+- [x] [경계] getTagAutocompleteSuggestions — should return at most three suggestions when more than three candidates match
+- [x] [경계] getTagAutocompleteSuggestions — should order suggestions by shorter tag name, higher usage count, and more recent usage when multiple candidates match
+- [x] [경계] getTagAutocompleteSuggestions — should return an empty list when normalized input is empty
+- [x] [정상] NoteEditor.autocomplete — should show suggestions derived from saved notes when the user starts typing a matching prefix
+- [x] [정상] NoteEditor.selectAutocompleteSuggestion — should add the clicked suggestion as a local tag chip when the user clicks an autocomplete suggestion
+- [x] [정상] NoteEditor.selectAutocompleteSuggestion — should add the active suggestion as a local tag chip when the user selects an autocomplete suggestion with the keyboard
+- [x] [예외] NoteEditor.selectAutocompleteSuggestion — should show the existing inline max-tag error and keep tags unchanged when selecting a suggestion would exceed five tags
+- [x] [정상] NoteEditor.save — should persist a tag selected from autocomplete when the user clicks save

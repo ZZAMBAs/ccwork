@@ -1,6 +1,8 @@
-import type { TagParseResult, TagValidationError } from '../types/tag';
+import type { Note } from '../types/note';
+import type { TagAutocompleteCandidate, TagParseResult, TagValidationError } from '../types/tag';
 
 const DEFAULT_MAX_TAGS = 5;
+const DEFAULT_AUTOCOMPLETE_LIMIT = 3;
 const VALID_TAG_PATTERN = /^[\p{L}\p{N} _#-]+$/u;
 
 export function normalizeTagName(input: string): string {
@@ -86,4 +88,81 @@ export function removeTagFromList(currentTags: string[], tagName: string): strin
 
 export function hasPendingTagInput(input: string): boolean {
   return normalizeTagName(input).length > 0;
+}
+
+export function collectTagAutocompleteCandidates(notes: Note[]): TagAutocompleteCandidate[] {
+  const candidates = new Map<
+    string,
+    {
+      usageCount: number;
+      latestUpdatedAt: string;
+      names: Map<string, { usageCount: number; latestUpdatedAt: string }>;
+    }
+  >();
+
+  for (const note of notes) {
+    for (const rawTag of note.tags) {
+      const tagName = normalizeTagName(rawTag);
+      if (getTagValidationError(tagName)) continue;
+
+      const comparisonKey = getTagComparisonKey(tagName);
+      const candidate = candidates.get(comparisonKey) ?? {
+        usageCount: 0,
+        latestUpdatedAt: note.updatedAt,
+        names: new Map(),
+      };
+      const name = candidate.names.get(tagName) ?? {
+        usageCount: 0,
+        latestUpdatedAt: note.updatedAt,
+      };
+
+      name.usageCount += 1;
+      if (note.updatedAt > name.latestUpdatedAt) name.latestUpdatedAt = note.updatedAt;
+      candidate.names.set(tagName, name);
+      candidate.usageCount += 1;
+      if (note.updatedAt > candidate.latestUpdatedAt) candidate.latestUpdatedAt = note.updatedAt;
+      candidates.set(comparisonKey, candidate);
+    }
+  }
+
+  return [...candidates.entries()].map(([comparisonKey, candidate]) => {
+    const [tagName] = [...candidate.names.entries()].sort(
+      ([leftName, left], [rightName, right]) =>
+        right.usageCount - left.usageCount ||
+        right.latestUpdatedAt.localeCompare(left.latestUpdatedAt) ||
+        leftName.localeCompare(rightName),
+    )[0];
+
+    return {
+      comparisonKey,
+      tagName,
+      usageCount: candidate.usageCount,
+      latestUpdatedAt: candidate.latestUpdatedAt,
+    };
+  });
+}
+
+export function getTagAutocompleteSuggestions(
+  candidates: TagAutocompleteCandidate[],
+  input: string,
+  currentTags: string[],
+  limit = DEFAULT_AUTOCOMPLETE_LIMIT,
+): TagAutocompleteCandidate[] {
+  const inputKey = getTagComparisonKey(input);
+  if (!inputKey) return [];
+
+  const currentKeys = new Set(currentTags.map(getTagComparisonKey));
+
+  return candidates
+    .filter(
+      (candidate) =>
+        candidate.comparisonKey.startsWith(inputKey) && !currentKeys.has(candidate.comparisonKey),
+    )
+    .sort(
+      (left, right) =>
+        left.tagName.length - right.tagName.length ||
+        right.usageCount - left.usageCount ||
+        right.latestUpdatedAt.localeCompare(left.latestUpdatedAt),
+    )
+    .slice(0, limit);
 }
