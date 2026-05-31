@@ -1,6 +1,6 @@
 ---
 name: test-scenarios
-description: 이슈 번호를 입력받아 GitHub Issue, tag PRD, 코드베이스를 근거로 구현 전 시그니처를 확정하고 테스트 시나리오를 도출한다. /test-scenarios N 호출이나 TDD 전 이슈 단위 시그니처와 테스트 시나리오 준비 요청에 사용한다. 이슈 번호가 없으면 번호를 추정하지 않고 번호를 함께 적어 달라고만 안내한다.
+description: 카테고리-이슈 번호를 입력받아 GitHub Issue, PRD, 코드베이스를 근거로 구현 전 시그니처를 확정하고 테스트 시나리오를 도출한다. /test-scenarios {category}-{number} 호출이나 TDD 전 이슈 단위 시그니처와 테스트 시나리오 준비 요청에 사용한다. 이슈 번호가 없으면 번호를 추정하지 않고 번호를 함께 적어 달라고만 안내한다.
 ---
 
 # Test Scenarios
@@ -14,21 +14,22 @@ description: 이슈 번호를 입력받아 GitHub Issue, tag PRD, 코드베이�
 사용자가 다음처럼 이슈 번호를 함께 입력하면 이 스킬을 사용한다.
 
 ```text
-/test-scenarios <GitHub 이슈 번호>
+/test-scenarios 카테고리-이슈번호
 ```
 
 이슈 번호가 없으면 절대 기본값을 추정하지 않는다. 특히 `1`번 이슈로 간주하지 않는다. 이 경우 다음 취지로만 짧게 답하고 즉시 종료한다.
 
 ```text
-이슈 번호를 함께 적어 주세요. 예: /test-scenarios 1
+카테고리와 이슈 번호를 함께 적어 주세요. 예: /test-scenarios tag-1
 ```
 
 ## 참고 대상
 
-- GitHub Issue: 사용 가능한 GitHub MCP 도구가 있으면 우선 고려한다. MCP가 없거나 필요한 조회를 할 수 없으면 `gh issue view $ARGUMENTS`를 사용한다.
+- GitHub Issue: 사용 가능한 GitHub MCP 도구가 있으면 우선 고려한다. MCP가 없거나 필요한 조회를 할 수 없으면 github CLI 도구를 사용한다.
 - GitHub Issue 조회가 MCP와 `gh` CLI 모두에서 실패하면 로컬 이슈 문서를 대체 근거로 사용하고, 어떤 조회 수단이 실패했는지 개발자에게 명확히 알린다.
-- PRD: `docs/features/tag/prd.md`를 우선 사용한다. 파일이 없으면 현재 저장소에 존재하는 `docs/feature/tag/prd.md` 같은 tag PRD 경로를 사용한다.
-- 이슈 문서: `docs/features/tag/issue-{N}.md`를 우선 사용한다. 파일이 없으면 현재 저장소에 존재하는 `docs/feature/tag/issue/{NN}-*.md` 같은 번호 매칭 문서를 사용한다.
+- PRD: 이슈와 관련된 `docs/features/{category}/prd.md`를 우선 사용한다. 파일이 없으면 현재 저장소에 존재하는 `docs/feature/{category}/prd.md` 같은 PRD 경로를 사용한다.
+- 로컬 이슈 문서: `docs/features/{category}/issue-{N}.md`를 우선 사용한다. 파일이 없으면 현재 저장소에 존재하는 `docs/feature/{category}/issue/{NN}-*.md` 같은 번호 매칭 문서를 사용한다.
+- github 이슈 문서: github 내 이슈 번호와 관계 없이 로컬 이슈 문서와 관련된 문서를 찾는다. 보통은 `[{카테고리}-{이슈번호}]` 형태로 시작한다.
 - 코드베이스: 시그니처 확정 전에 관련 파일을 반드시 읽는다. 특히 `src/api/notes.ts`, `src/context/NotesContext.tsx`, `src/components/`, `src/types/`의 기존 패턴을 확인한다.
 
 ## 실행 순서

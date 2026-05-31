@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { useNotes } from '../context/NotesContext';
+import { TagAutocomplete } from './TagAutocomplete';
 import { TagChip } from './TagChip';
-import { addTagsToList, getTagValidationError, hasPendingTagInput } from '../utils/tags';
+import {
+  addTagsToList,
+  collectTagAutocompleteCandidates,
+  getTagAutocompleteSuggestions,
+  getTagValidationError,
+  hasPendingTagInput,
+} from '../utils/tags';
 import type { TagValidationError } from '../types/tag';
 
 interface NoteEditorProps {
@@ -20,8 +27,16 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
   const [showPendingTagDialog, setShowPendingTagDialog] = useState(false);
   const [hasEditedTags, setHasEditedTags] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
 
   const selectedNote = notes.find((n) => n.id === selectedNoteId);
+  const autocompleteCandidates = useMemo(() => collectTagAutocompleteCandidates(notes), [notes]);
+  const suggestions = useMemo(
+    () => getTagAutocompleteSuggestions(autocompleteCandidates, tagInput, tags),
+    [autocompleteCandidates, tagInput, tags],
+  );
 
   // 선택된 노트가 바뀔 때 폼 동기화
   useEffect(() => {
@@ -33,6 +48,8 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
       setTagError(null);
       setShowPendingTagDialog(false);
       setHasEditedTags(false);
+      setActiveSuggestionIndex(-1);
+      setIsAutocompleteOpen(false);
     } else if (isCreating) {
       setTitle('');
       setContent('');
@@ -41,14 +58,33 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
       setTagError(null);
       setShowPendingTagDialog(false);
       setHasEditedTags(false);
+      setActiveSuggestionIndex(-1);
+      setIsAutocompleteOpen(false);
     }
   }, [selectedNote, isCreating]);
 
-  const handleAddTag = () => {
-    const result = addTagsToList(tags, tagInput);
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!autocompleteRef.current?.contains(event.target as Node)) {
+        setIsAutocompleteOpen(false);
+        setActiveSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, []);
+
+  const handleAddTag = (input = tagInput) => {
+    const result = addTagsToList(tags, input);
 
     if (result.errors.length > 0) {
       setTagError(result.errors[0]);
+      if (input !== tagInput) {
+        setTagInput('');
+        setActiveSuggestionIndex(-1);
+        setIsAutocompleteOpen(false);
+      }
       return;
     }
 
@@ -57,12 +93,36 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
     setTagInput('');
     setTagError(null);
     setShowPendingTagDialog(false);
+    setActiveSuggestionIndex(-1);
+    setIsAutocompleteOpen(false);
   };
 
   const handleTagKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' && isAutocompleteOpen && suggestions.length > 0) {
+      event.preventDefault();
+      setActiveSuggestionIndex((current) => (current + 1) % suggestions.length);
+      return;
+    }
+
+    if (event.key === 'ArrowUp' && isAutocompleteOpen && suggestions.length > 0) {
+      event.preventDefault();
+      setActiveSuggestionIndex((current) => (current <= 0 ? suggestions.length - 1 : current - 1));
+      return;
+    }
+
     if (event.key === 'Enter') {
       event.preventDefault();
+      if (isAutocompleteOpen && activeSuggestionIndex >= 0) {
+        handleAddTag(suggestions[activeSuggestionIndex].tagName);
+        return;
+      }
       handleAddTag();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      setIsAutocompleteOpen(false);
+      setActiveSuggestionIndex(-1);
     }
   };
 
@@ -160,28 +220,37 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
             />
           ))}
         </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            aria-label="Tag"
-            value={tagInput}
-            onChange={(e) => {
-              setTagInput(e.target.value);
-              setTagError(null);
-              setShowPendingTagDialog(false);
-            }}
-            onKeyDown={handleTagKeyDown}
-            placeholder="태그"
-            className="flex-1 text-sm text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
+        <div ref={autocompleteRef}>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              aria-label="Tag"
+              value={tagInput}
+              onChange={(e) => {
+                setTagInput(e.target.value);
+                setTagError(null);
+                setShowPendingTagDialog(false);
+                setActiveSuggestionIndex(-1);
+                setIsAutocompleteOpen(true);
+              }}
+              onKeyDown={handleTagKeyDown}
+              placeholder="태그"
+              className="flex-1 text-sm text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
+            />
+            <button
+              type="button"
+              onClick={() => handleAddTag()}
+              disabled={saving}
+              className="bg-foreground text-card px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-75 transition-opacity disabled:opacity-40 cursor-pointer"
+            >
+              추가
+            </button>
+          </div>
+          <TagAutocomplete
+            suggestions={isAutocompleteOpen ? suggestions : []}
+            activeIndex={activeSuggestionIndex}
+            onSelect={handleAddTag}
           />
-          <button
-            type="button"
-            onClick={handleAddTag}
-            disabled={saving}
-            className="bg-foreground text-card px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-75 transition-opacity disabled:opacity-40 cursor-pointer"
-          >
-            추가
-          </button>
         </div>
         {tagError ? (
           <p role="alert" className="text-xs text-destructive">
