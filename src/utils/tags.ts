@@ -101,11 +101,16 @@ export function collectTagAutocompleteCandidates(notes: Note[]): TagAutocomplete
   >();
 
   for (const note of notes) {
+    const seenComparisonKeys = new Set<string>();
+
     for (const rawTag of note.tags) {
       const tagName = normalizeTagName(rawTag);
       if (getTagValidationError(tagName)) continue;
 
       const comparisonKey = getTagComparisonKey(tagName);
+      if (seenComparisonKeys.has(comparisonKey)) continue;
+
+      seenComparisonKeys.add(comparisonKey);
       const candidate = candidates.get(comparisonKey) ?? {
         usageCount: 0,
         latestUpdatedAt: note.updatedAt,

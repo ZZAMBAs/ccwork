@@ -63,6 +63,15 @@ describe('collectTagAutocompleteCandidates', () => {
       ]),
     ).toEqual([expect.objectContaining({ tagName: 'react' })]);
   });
+
+  it('should count duplicate comparison keys only once when the same note contains duplicate persisted tags', () => {
+    expect(collectTagAutocompleteCandidates([note({ tags: ['React', 'react'] })])).toEqual([
+      expect.objectContaining({
+        comparisonKey: 'react',
+        usageCount: 1,
+      }),
+    ]);
+  });
 });
 
 describe('getTagAutocompleteSuggestions', () => {
@@ -117,6 +126,24 @@ describe('getTagAutocompleteSuggestions', () => {
         4,
       ).map((suggestion) => suggestion.tagName),
     ).toEqual(['Remix', 'Redux', 'React', 'Reason']);
+  });
+
+  it('should order suggestions by distinct-note usage count when one note contains duplicate persisted tags', () => {
+    expect(
+      getTagAutocompleteSuggestions(
+        collectTagAutocompleteCandidates([
+          note({
+            id: '1',
+            tags: ['React', 'react'],
+            updatedAt: '2026-01-03T00:00:00.000Z',
+          }),
+          note({ id: '2', tags: ['Remix'], updatedAt: '2026-01-01T00:00:00.000Z' }),
+          note({ id: '3', tags: ['Remix'], updatedAt: '2026-01-02T00:00:00.000Z' }),
+        ]),
+        're',
+        [],
+      ).map((suggestion) => suggestion.tagName),
+    ).toEqual(['Remix', 'React']);
   });
 
   it('should return an empty list when normalized input is empty', () => {
