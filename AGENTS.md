@@ -1,6 +1,6 @@
 ﻿# AGENTS.md
 
-이 파일은 최대 200자 이내로 유지한다.
+이 파일은 최대 200줄(line) 이내로 유지한다.
 
 ## 프로젝트 개요
 
@@ -120,6 +120,22 @@ Notes App은 React 19, TypeScript, Vite로 만든 단일 페이지 노트 앱이
 - Husky, lint-staged, commitlint 실패 시 커밋하지 말고 원인을 수정한 뒤 다시 시도한다.
 - 커밋 메시지는 `feat`, `fix`, `docs`, `refactor`, `test`, `style`, `chore` 타입을 사용한다.
 - 커밋 메시지는 한국어 기반으로 작성한다.
+
+## TDD 이슈 사이클
+
+새 이슈 작업 시 다음 순서를 따른다.
+
+1. `/test-scenarios N`: 시그니처와 시나리오 확정(skill)
+2. `/tdd-red N`: 실패 테스트 작성(skill)
+3. `/tdd-green N`: 최소 구현 및 전체 테스트 통과(skill)
+4. `@ac-verifier N`: AC 충족 독립 검증(agent). 테스트 통과가 AC 충족을 의미하지는 않는다.
+5. `/tdd-refactor N`: 구조 개선. 깨지면 즉시 롤백(skill)
+6. `/security-review N`: 타입 및 보안 점검(skill)
+7. `commit` 후 `PR --base main`, squash merge, issue close
+
+- 각 단계에는 인간 승인 게이트가 있다. 자동으로 다음 단계로 넘어가지 않는다.
+- 개발 중에는 현재 단계와 다음 권장 단계를 식별해 사용자에게 제안한다.
+- 이슈 의존성이 있으면 선행 이슈가 머지된 `feat` 브랜치에서 분기한다.
 
 ## 에이전트 작업 지침
 
