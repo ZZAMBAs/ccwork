@@ -1,4 +1,4 @@
 interface:
   display_name: 'E2E Write'
-  short_description: 'PRD 사용자 스토리를 Playwright E2E 테스트로 작성'
-  default_prompt: 'Use $e2e-write to convert a feature PRD into focused Playwright E2E tests.'
+  short_description: 'PRD 사용자 스토리를 한국어 리포트와 격리된 Playwright E2E 테스트로 작성'
+  default_prompt: 'Use $e2e-write to convert a feature PRD into isolated Playwright E2E tests with Korean report titles and steps.'

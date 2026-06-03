@@ -1,0 +1,20 @@
+{
+  "notes": [
+    {
+      "id": "tag-target",
+      "title": "E2E 태그 편집 대상 노트",
+      "content": "E2E 테스트에서 태그를 편집할 노트입니다.",
+      "tags": [],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "tag-source-react",
+      "title": "E2E React 태그 원본 노트",
+      "content": "자동완성에서 재사용할 태그를 제공하는 노트입니다.",
+      "tags": ["React"],
+      "createdAt": "2026-01-02T00:00:00.000Z",
+      "updatedAt": "2026-01-02T00:00:00.000Z"
+    }
+  ]
+}
