@@ -6,6 +6,7 @@ import {
   sortTagSummariesForList,
   sortTagSummariesForSearch,
 } from './tags';
+import * as tagUtils from './tags';
 
 import type { Note } from '../types/note';
 import type { TagSummary } from '../types/tag';
@@ -146,5 +147,59 @@ describe('sortTagSummariesForSearch', () => {
         're',
       ).map((tag) => tag.tagName),
     ).toEqual(['Redux', 'Remix', 'React', 'Reason']);
+  });
+});
+
+describe('getNotesByTag', () => {
+  it('should return only notes with the selected tag sorted by latest updatedAt and mapped with fallback title, optional content preview, updated date, and all tag chips when matching notes exist', () => {
+    const getNotesByTag = (
+      tagUtils as {
+        getNotesByTag?: (notes: Note[], comparisonKey: string) => unknown;
+      }
+    ).getNotesByTag;
+
+    expect(
+      getNotesByTag?.(
+        [
+          note({
+            id: 'older',
+            title: '',
+            content: '   ',
+            tags: ['React', 'Testing'],
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          }),
+          note({
+            id: 'newer',
+            title: 'Latest React',
+            content: '  Preview body  ',
+            tags: ['react', 'Vite'],
+            updatedAt: '2026-01-03T00:00:00.000Z',
+          }),
+          note({
+            id: 'other',
+            title: 'Vite only',
+            content: 'No match',
+            tags: ['Vite'],
+            updatedAt: '2026-01-04T00:00:00.000Z',
+          }),
+        ],
+        'react',
+      ),
+    ).toEqual([
+      {
+        id: 'newer',
+        title: 'Latest React',
+        contentPreview: 'Preview body',
+        tags: ['react', 'Vite'],
+        updatedAt: '2026-01-03T00:00:00.000Z',
+      },
+      {
+        id: 'older',
+        title: '(제목 없음)',
+        contentPreview: '',
+        tags: ['React', 'Testing'],
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
   });
 });

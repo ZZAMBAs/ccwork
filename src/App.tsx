@@ -43,6 +43,12 @@ function AppContent() {
     setSelectedNoteId(shouldRestoreSelectedNote ? lastSelectedNoteIdBeforeTags : null);
   };
 
+  const handleSelectTaggedNote = (noteId: string) => {
+    setMode('notes');
+    setIsCreating(false);
+    setSelectedNoteId(noteId);
+  };
+
   const handleDone = (savedNoteId?: string) => {
     setIsCreating(false);
     if (savedNoteId) {
@@ -57,6 +63,7 @@ function AppContent() {
         loading={loading}
         error={error}
         onBackToNotes={handleBackToNotes}
+        onSelectNote={handleSelectTaggedNote}
       />
     );
   }
