@@ -37,7 +37,7 @@ description: 카테고리-이슈번호 입력 하나로 TDD 7단계를 subagent 
   - 성공: `[<단계명>] OK`
   - 중단: `[<단계명>] STOP(<사유>)`
 - 사용자에게 승인이나 추가 입력을 묻지 않는다.
-- STOP 시 메인 로그를 남기고 GitHub issue comment를 작성한 뒤 루프를 종료한다. GitHub MCP를 우선 사용하고 불가능하면 `gh issue comment`를 사용한다.
+- STOP 시 GitHub issue comment를 작성하지 않는다. 메인 로그 JSON과 사람이 읽을 수 있는 중단 해설을 사용자에게 보고한 뒤 루프를 종료한다.
 
 ## 모든 Subagent Prompt 접미사
 
@@ -322,9 +322,16 @@ STOP 조건:
 STOP 시 메인 에이전트는 다음 순서만 수행한다.
 
 1. `[<단계명>] STOP(<stop_reason>)` 한 줄 출력.
-2. 아래 메인 로그 JSON을 본 세션에 남긴다.
-3. GitHub issue comment를 작성한다.
+2. STOP JSON을 해석해 왜 멈췄는지 사용자에게 짧게 설명한다.
+3. 아래 메인 로그 JSON을 본 세션에 남긴다.
 4. 루프 종료.
+
+해설 규칙:
+
+- 해설은 STOP JSON의 `stage`, `stop_reason`, 이전 단계 성공 여부, 확인된 `github_issue`, `base_branch`, `work_branch` 같은 필드만 근거로 작성한다.
+- JSON만 출력하지 않는다. 사용자가 다음 조치를 판단할 수 있도록 원인과 권장 조치를 함께 설명한다.
+- 코드 본문, 테스트 본문, diff 본문을 직접 읽지 않는다.
+- GitHub issue에는 STOP 코멘트를 남기지 않는다.
 
 STOP 메인 로그:
 
@@ -343,17 +350,33 @@ STOP 메인 로그:
     "tdd_green",
     "ac_verifier",
     "tdd_refactor"
-  ]
+  ],
+  "stop_summary": "Security Review 단계에서 npm audit 결과 High 이상 취약점이 남아 자동 루프를 중단했다.",
+  "next_action": "취약점 원인을 확인해 수정하거나 무시 가능하다고 판단되면 보안 검토 정책을 조정한 뒤 다시 실행한다."
 }
 ```
 
-GitHub issue comment 본문:
+STOP 보고 예시:
 
-```text
-tdd-auto-loop STOP
-- argument: tag-1
-- stage: security_review
-- reason: audit_high_or_above
+```json
+{
+  "loop": "tdd_auto_loop",
+  "status": "stop",
+  "argument": "tag-1",
+  "github_issue": 12,
+  "stage": "security_review",
+  "stop_reason": "audit_high_or_above",
+  "completed_stages": [
+    "preflight",
+    "test_scenarios",
+    "tdd_red",
+    "tdd_green",
+    "ac_verifier",
+    "tdd_refactor"
+  ],
+  "stop_summary": "Security Review 단계에서 npm audit 결과 High 이상 취약점이 남아 자동 루프를 중단했다.",
+  "next_action": "취약점 원인을 확인해 수정하거나 무시 가능하다고 판단되면 보안 검토 정책을 조정한 뒤 다시 실행한다."
+}
 ```
 
 ## 완료 처리
