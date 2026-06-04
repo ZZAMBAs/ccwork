@@ -131,3 +131,72 @@ describe('TagListView.search', () => {
     expect(within(grid).queryByTestId('tag-card-react')).not.toBeInTheDocument();
   });
 });
+
+describe('TagListView.openTagDetail', () => {
+  it('should show the tag detail heading, navigation buttons, note count, and note cards when the user clicks a tag card', async () => {
+    const user = userEvent.setup();
+    render(
+      <TagListView
+        notes={[
+          note({
+            id: '1',
+            title: 'Recent React note',
+            content: 'Latest tagged note body',
+            tags: ['React', 'Testing'],
+            updatedAt: '2026-01-03T00:00:00.000Z',
+          }),
+          note({
+            id: '2',
+            title: 'Older React note',
+            content: 'Older tagged note body',
+            tags: ['react'],
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          }),
+        ]}
+        loading={false}
+        error={null}
+        onBackToNotes={vi.fn()}
+        onSelectNote={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByTestId('tag-card-react'));
+
+    expect(screen.getByRole('heading', { name: 'React' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '태그 목록으로 돌아가기' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '노트로 돌아가기' })).toBeInTheDocument();
+    expect(screen.getByText('포함 노트 2개')).toBeInTheDocument();
+    expect(screen.getByText('Recent React note')).toBeInTheDocument();
+    expect(screen.getByText('Older React note')).toBeInTheDocument();
+  });
+});
+
+describe('TagListView.syncSelectedTag', () => {
+  it('should return to the tag list and show the missing-tag notice when the selected tag disappears from all notes while detail is open', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <TagListView
+        notes={[note({ id: '1', tags: ['React'] })]}
+        loading={false}
+        error={null}
+        onBackToNotes={vi.fn()}
+        onSelectNote={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByTestId('tag-card-react'));
+    rerender(
+      <TagListView
+        notes={[note({ id: '2', tags: ['Vite'] })]}
+        loading={false}
+        error={null}
+        onBackToNotes={vi.fn()}
+        onSelectNote={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: '태그 목록' })).toBeInTheDocument();
+    expect(screen.getByText('해당 태그가 더 이상 없습니다')).toBeInTheDocument();
+    expect(screen.queryByTestId('tag-card-react')).not.toBeInTheDocument();
+  });
+});

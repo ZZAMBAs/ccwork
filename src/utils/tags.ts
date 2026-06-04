@@ -2,6 +2,7 @@ import type { Note } from '../types/note';
 import type {
   TagAutocompleteCandidate,
   TagParseResult,
+  TaggedNoteCard,
   TagSummary,
   TagValidationError,
 } from '../types/tag';
@@ -10,6 +11,11 @@ const DEFAULT_MAX_TAGS = 5;
 const DEFAULT_AUTOCOMPLETE_LIMIT = 3;
 const VALID_TAG_PATTERN = /^[\p{L}\p{N} _#-]+$/u;
 type TagNameUsage = { usageCount: number; latestUpdatedAt: string };
+type TagAggregate = {
+  count: number;
+  latestUpdatedAt: string;
+  names: Map<string, TagNameUsage>;
+};
 
 export function normalizeTagName(input: string): string {
   return input.trim().replace(/\s+/g, ' ');
@@ -107,15 +113,8 @@ function chooseRepresentativeTagName(names: Map<string, TagNameUsage>): string {
   return tagName;
 }
 
-export function collectTagAutocompleteCandidates(notes: Note[]): TagAutocompleteCandidate[] {
-  const candidates = new Map<
-    string,
-    {
-      usageCount: number;
-      latestUpdatedAt: string;
-      names: Map<string, TagNameUsage>;
-    }
-  >();
+function collectTagAggregates(notes: Note[]): Map<string, TagAggregate> {
+  const aggregates = new Map<string, TagAggregate>();
 
   for (const note of notes) {
     const seenComparisonKeys = new Set<string>();
@@ -128,80 +127,45 @@ export function collectTagAutocompleteCandidates(notes: Note[]): TagAutocomplete
       if (seenComparisonKeys.has(comparisonKey)) continue;
 
       seenComparisonKeys.add(comparisonKey);
-      const candidate = candidates.get(comparisonKey) ?? {
-        usageCount: 0,
+      const aggregate = aggregates.get(comparisonKey) ?? {
+        count: 0,
         latestUpdatedAt: note.updatedAt,
         names: new Map(),
       };
-      const name = candidate.names.get(tagName) ?? {
+      const name = aggregate.names.get(tagName) ?? {
         usageCount: 0,
         latestUpdatedAt: note.updatedAt,
       };
 
       name.usageCount += 1;
       if (note.updatedAt > name.latestUpdatedAt) name.latestUpdatedAt = note.updatedAt;
-      candidate.names.set(tagName, name);
-      candidate.usageCount += 1;
-      if (note.updatedAt > candidate.latestUpdatedAt) candidate.latestUpdatedAt = note.updatedAt;
-      candidates.set(comparisonKey, candidate);
+      aggregate.names.set(tagName, name);
+      aggregate.count += 1;
+      if (note.updatedAt > aggregate.latestUpdatedAt) aggregate.latestUpdatedAt = note.updatedAt;
+      aggregates.set(comparisonKey, aggregate);
     }
   }
 
-  return [...candidates.entries()].map(([comparisonKey, candidate]) => {
+  return aggregates;
+}
+
+export function collectTagAutocompleteCandidates(notes: Note[]): TagAutocompleteCandidate[] {
+  return [...collectTagAggregates(notes).entries()].map(([comparisonKey, aggregate]) => {
     return {
       comparisonKey,
-      tagName: chooseRepresentativeTagName(candidate.names),
-      usageCount: candidate.usageCount,
-      latestUpdatedAt: candidate.latestUpdatedAt,
+      tagName: chooseRepresentativeTagName(aggregate.names),
+      usageCount: aggregate.count,
+      latestUpdatedAt: aggregate.latestUpdatedAt,
     };
   });
 }
 
 export function collectTagSummaries(notes: Note[]): TagSummary[] {
-  const summaries = new Map<
-    string,
-    {
-      noteCount: number;
-      latestUpdatedAt: string;
-      names: Map<string, TagNameUsage>;
-    }
-  >();
-
-  for (const note of notes) {
-    const seenComparisonKeys = new Set<string>();
-
-    for (const rawTag of note.tags) {
-      const tagName = normalizeTagName(rawTag);
-      if (getTagValidationError(tagName)) continue;
-
-      const comparisonKey = getTagComparisonKey(tagName);
-      if (seenComparisonKeys.has(comparisonKey)) continue;
-
-      seenComparisonKeys.add(comparisonKey);
-      const summary = summaries.get(comparisonKey) ?? {
-        noteCount: 0,
-        latestUpdatedAt: note.updatedAt,
-        names: new Map(),
-      };
-      const name = summary.names.get(tagName) ?? {
-        usageCount: 0,
-        latestUpdatedAt: note.updatedAt,
-      };
-
-      name.usageCount += 1;
-      if (note.updatedAt > name.latestUpdatedAt) name.latestUpdatedAt = note.updatedAt;
-      summary.names.set(tagName, name);
-      summary.noteCount += 1;
-      if (note.updatedAt > summary.latestUpdatedAt) summary.latestUpdatedAt = note.updatedAt;
-      summaries.set(comparisonKey, summary);
-    }
-  }
-
-  return [...summaries.entries()].map(([comparisonKey, summary]) => {
+  return [...collectTagAggregates(notes).entries()].map(([comparisonKey, summary]) => {
     return {
       comparisonKey,
       tagName: chooseRepresentativeTagName(summary.names),
-      noteCount: summary.noteCount,
+      noteCount: summary.count,
       latestUpdatedAt: summary.latestUpdatedAt,
     };
   });
@@ -235,6 +199,31 @@ export function sortTagSummariesForSearch(summaries: TagSummary[], query: string
       left.tagName.localeCompare(right.tagName)
     );
   });
+}
+
+export function getNotesByTag(notes: Note[], comparisonKey: string): TaggedNoteCard[] {
+  return notes
+    .filter((note) =>
+      note.tags.some((rawTag) => {
+        const tagName = normalizeTagName(rawTag);
+        return !getTagValidationError(tagName) && getTagComparisonKey(tagName) === comparisonKey;
+      }),
+    )
+    .map((note) => {
+      const title = note.title.trim();
+
+      return {
+        id: note.id,
+        title: title || '(제목 없음)',
+        contentPreview: note.content.trim(),
+        tags: note.tags,
+        updatedAt: note.updatedAt,
+      };
+    })
+    .sort(
+      (left, right) =>
+        right.updatedAt.localeCompare(left.updatedAt) || left.title.localeCompare(right.title),
+    );
 }
 
 export function getTagAutocompleteSuggestions(

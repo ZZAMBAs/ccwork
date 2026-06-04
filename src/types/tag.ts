@@ -26,9 +26,28 @@ export interface TagSummary {
   latestUpdatedAt: string;
 }
 
+export type TagViewMode = 'list' | 'detail';
+
+export interface TaggedNoteCard {
+  id: string;
+  title: string;
+  contentPreview: string;
+  tags: string[];
+  updatedAt: string;
+}
+
+export interface TagDetailViewProps {
+  tag: TagSummary;
+  notes: TaggedNoteCard[];
+  onBackToTagList: () => void;
+  onBackToNotes: () => void;
+  onSelectNote: (noteId: string) => void;
+}
+
 export interface TagListViewProps {
   notes: Note[];
   loading: boolean;
   error: string | null;
   onBackToNotes: () => void;
+  onSelectNote: (noteId: string) => void;
 }

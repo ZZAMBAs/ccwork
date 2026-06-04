@@ -141,3 +141,35 @@ describe('App.backToNotes', () => {
     expect(screen.getByDisplayValue('Note A')).toBeInTheDocument();
   });
 });
+
+describe('App.selectTaggedNote', () => {
+  it('should exit tag mode, end creating state, and select the clicked note in the normal editor when the user clicks a note card in tag detail', async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        note({
+          id: 'react-note',
+          title: 'React detail note',
+          content: 'Selected from tag detail',
+          tags: ['React'],
+        }),
+      ],
+    });
+
+    render(<App />);
+
+    await screen.findByText('React detail note');
+    await user.click(screen.getByRole('button', { name: '+ 새 노트' }));
+    expect(screen.getByText('새 노트')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '태그' }));
+    await user.click(screen.getByTestId('tag-card-react'));
+    await user.click(screen.getByText('React detail note'));
+
+    expect(screen.queryByRole('heading', { name: '태그 목록' })).not.toBeInTheDocument();
+    expect(screen.queryByText('새 노트')).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue('React detail note')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Selected from tag detail')).toBeInTheDocument();
+  });
+});

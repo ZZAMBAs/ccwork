@@ -1,24 +1,138 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import type { TagListViewProps } from '../types/tag';
+import type { TaggedNoteCard, TagListViewProps, TagSummary, TagViewMode } from '../types/tag';
 import {
   collectTagSummaries,
+  getNotesByTag,
   searchTagSummaries,
   sortTagSummariesForList,
   sortTagSummariesForSearch,
 } from '../utils/tags';
 
+type TagListViewComponentProps = Omit<TagListViewProps, 'onSelectNote'> & {
+  onSelectNote?: TagListViewProps['onSelectNote'];
+};
+
 function formatDate(isoDate: string): string {
   return isoDate.split('T')[0];
 }
 
-export function TagListView({ notes, loading, error, onBackToNotes }: TagListViewProps) {
+interface TagDetailViewProps {
+  tag: TagSummary;
+  notes: TaggedNoteCard[];
+  onBackToTagList: () => void;
+  onBackToNotes: () => void;
+  onSelectNote: (noteId: string) => void;
+}
+
+function TagDetailView({
+  tag,
+  notes,
+  onBackToTagList,
+  onBackToNotes,
+  onSelectNote,
+}: TagDetailViewProps) {
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+        <h1 className="text-2xl font-bold text-foreground">{tag.tagName}</h1>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onBackToTagList}
+            className="px-5 py-2 rounded-xl text-sm font-semibold text-muted-foreground bg-muted hover:bg-border transition-colors cursor-pointer"
+          >
+            태그 목록으로 돌아가기
+          </button>
+          <button
+            type="button"
+            onClick={onBackToNotes}
+            className="px-5 py-2 rounded-xl text-sm font-semibold text-muted-foreground bg-muted hover:bg-border transition-colors cursor-pointer"
+          >
+            노트로 돌아가기
+          </button>
+        </div>
+      </header>
+
+      <main className="p-8 space-y-6">
+        <div className="max-w-3xl space-y-3">
+          <p className="text-sm text-muted-foreground">포함 노트 {notes.length}개</p>
+          <div className="grid gap-3">
+            {notes.map((note) => (
+              <article
+                key={note.id}
+                onClick={() => onSelectNote(note.id)}
+                className="bg-card rounded-2xl p-4 border border-border transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.07)] cursor-pointer"
+              >
+                <h2 className="font-semibold text-sm text-foreground line-clamp-1">{note.title}</h2>
+                {note.contentPreview ? (
+                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                    {note.contentPreview}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {note.tags.map((tagName) => (
+                    <span
+                      key={`${note.id}-${tagName}`}
+                      className="rounded-xl bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                    >
+                      {tagName}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground/70 mt-2">
+                  {formatDate(note.updatedAt)}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export function TagListView({
+  notes,
+  loading,
+  error,
+  onBackToNotes,
+  onSelectNote = () => {},
+}: TagListViewComponentProps) {
   const [query, setQuery] = useState('');
+  const [viewMode, setViewMode] = useState<TagViewMode>('list');
+  const [selectedTagKey, setSelectedTagKey] = useState<string | null>(null);
+  const [missingTagNotice, setMissingTagNotice] = useState(false);
   const summaries = useMemo(() => collectTagSummaries(notes), [notes]);
+  const selectedTag = summaries.find((summary) => summary.comparisonKey === selectedTagKey);
   const visibleSummaries = useMemo(() => {
     const searched = searchTagSummaries(summaries, query);
     return query ? sortTagSummariesForSearch(searched, query) : sortTagSummariesForList(searched);
   }, [query, summaries]);
+  const taggedNotes = useMemo(
+    () => (selectedTagKey ? getNotesByTag(notes, selectedTagKey) : []),
+    [notes, selectedTagKey],
+  );
+
+  useEffect(() => {
+    if (viewMode === 'detail' && selectedTagKey && !selectedTag) {
+      setViewMode('list');
+      setSelectedTagKey(null);
+      setMissingTagNotice(true);
+    }
+  }, [selectedTag, selectedTagKey, viewMode]);
+
+  if (viewMode === 'detail' && selectedTag) {
+    return (
+      <TagDetailView
+        tag={selectedTag}
+        notes={taggedNotes}
+        onBackToTagList={() => setViewMode('list')}
+        onBackToNotes={onBackToNotes}
+        onSelectNote={onSelectNote}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -60,6 +174,11 @@ export function TagListView({ notes, loading, error, onBackToNotes }: TagListVie
           ) : null}
 
           {error ? <p className="text-sm text-destructive text-center py-2">{error}</p> : null}
+          {missingTagNotice ? (
+            <p className="text-sm text-muted-foreground text-center py-2">
+              해당 태그가 더 이상 없습니다
+            </p>
+          ) : null}
 
           {!loading ? (
             <div data-testid="tag-card-grid" className="grid gap-3 sm:grid-cols-2">
@@ -76,6 +195,11 @@ export function TagListView({ notes, loading, error, onBackToNotes }: TagListVie
                   <article
                     key={summary.comparisonKey}
                     data-testid={`tag-card-${summary.comparisonKey}`}
+                    onClick={() => {
+                      setSelectedTagKey(summary.comparisonKey);
+                      setMissingTagNotice(false);
+                      setViewMode('detail');
+                    }}
                     className="bg-card rounded-2xl p-4 border border-border transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.07)]"
                   >
                     <h2 className="font-semibold text-sm text-foreground line-clamp-1">
