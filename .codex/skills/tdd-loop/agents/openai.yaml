@@ -1,0 +1,7 @@
+interface:
+  display_name: "TDD Loop"
+  short_description: "이슈 단위 TDD 풀 사이클 순서 실행"
+  default_prompt: "Use $tdd-loop to run the full TDD cycle for a category-issue identifier."
+
+policy:
+  allow_implicit_invocation: true
