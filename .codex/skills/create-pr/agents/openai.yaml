@@ -1,0 +1,7 @@
+interface:
+  display_name: "Create PR"
+  short_description: "초안 검토, E2E 검증, PR 생성 자동화"
+  default_prompt: "Use $create-pr to 현재 브랜치의 변경사항을 검토하고 PR을 생성해 주세요."
+
+policy:
+  allow_implicit_invocation: true
