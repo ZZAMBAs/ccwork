@@ -1,0 +1,7 @@
+interface:
+  display_name: "TDD Auto Loop"
+  short_description: "이슈 TDD 7단계 자동 격리 실행"
+  default_prompt: "Use $tdd-auto-loop to run the autonomous TDD cycle for a category-issue identifier."
+
+policy:
+  allow_implicit_invocation: true
