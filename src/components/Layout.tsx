@@ -2,11 +2,12 @@ import { ReactNode } from 'react';
 
 interface LayoutProps {
   onNewNote: () => void;
+  onOpenTags: () => void;
   sidebar: ReactNode;
   main: ReactNode;
 }
 
-export function Layout({ onNewNote, sidebar, main }: LayoutProps) {
+export function Layout({ onNewNote, onOpenTags, sidebar, main }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* 헤더 */}
@@ -17,12 +18,21 @@ export function Layout({ onNewNote, sidebar, main }: LayoutProps) {
         >
           📝 Notes
         </h1>
-        <button
-          onClick={onNewNote}
-          className="bg-foreground text-card px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-75 transition-opacity cursor-pointer"
-        >
-          + 새 노트
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenTags}
+            className="px-5 py-2 rounded-xl text-sm font-semibold text-muted-foreground bg-muted hover:bg-border transition-colors cursor-pointer"
+          >
+            태그
+          </button>
+          <button
+            onClick={onNewNote}
+            className="bg-foreground text-card px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-75 transition-opacity cursor-pointer"
+          >
+            + 새 노트
+          </button>
+        </div>
       </header>
 
       {/* 바디 */}
