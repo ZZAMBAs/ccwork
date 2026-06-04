@@ -8,6 +8,7 @@ import {
   getTagAutocompleteSuggestions,
   getTagValidationError,
   hasPendingTagInput,
+  hasUnsavedNoteDraftChanges,
 } from '../utils/tags';
 import type { TagValidationError } from '../types/tag';
 
@@ -15,9 +16,15 @@ interface NoteEditorProps {
   selectedNoteId: string | null;
   isCreating: boolean;
   onDone: (savedNoteId?: string) => void;
+  onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void;
 }
 
-export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorProps) {
+export function NoteEditor({
+  selectedNoteId,
+  isCreating,
+  onDone,
+  onUnsavedChangesChange,
+}: NoteEditorProps) {
   const { notes, createNote, updateNote } = useNotes();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -74,6 +81,23 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, []);
+
+  useEffect(() => {
+    if (!selectedNote && !isCreating) {
+      onUnsavedChangesChange?.(false);
+      return;
+    }
+
+    const savedDraft = {
+      title: selectedNote?.title ?? '',
+      content: selectedNote?.content ?? '',
+      tags: selectedNote?.tags ?? [],
+      tagInput: '',
+    };
+    const currentDraft = { title, content, tags, tagInput };
+
+    onUnsavedChangesChange?.(hasUnsavedNoteDraftChanges(currentDraft, savedDraft));
+  }, [content, isCreating, onUnsavedChangesChange, selectedNote, tagInput, tags, title]);
 
   const handleAddTag = (input = tagInput) => {
     const result = addTagsToList(tags, input);

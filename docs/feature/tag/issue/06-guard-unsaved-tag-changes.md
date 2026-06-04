@@ -25,3 +25,81 @@
 - 사용자가 미저장 변경이 있는 상태에서 브라우저 새로고침이나 탭 닫기를 시도하면, 브라우저 기본 이탈 경고가 표시되어야 한다.
 - 사용자가 미저장 변경 확인 후 태그 모드에 진입했다면, 태그 상세에서 노트 카드를 클릭할 때 추가 미저장 변경 모달 없이 해당 노트로 이동해야 한다.
 - 사용자가 변경 사항이 없는 상태에서 다른 노트 선택, 새 노트 생성, 태그 모드 진입을 수행하면, 미저장 변경 확인 모달 없이 즉시 이동해야 한다.
+
+## 확정 시그니처
+
+### 공용 타입
+
+```ts
+export interface NoteEditorDraftSnapshot {
+  title: string;
+  content: string;
+  tags: string[];
+  tagInput: string;
+}
+
+export type PendingNoteNavigation =
+  | { type: 'select-note'; noteId: string }
+  | { type: 'new-note' }
+  | { type: 'open-tags' };
+```
+
+### 순수 함수
+
+```ts
+export function hasUnsavedNoteDraftChanges(
+  currentDraft: NoteEditorDraftSnapshot,
+  savedDraft: NoteEditorDraftSnapshot,
+): boolean;
+```
+
+- 제목, 본문, 태그 배열, 미추가 태그 입력값을 비교한다.
+- 태그 배열은 현재 저장 흐름의 순서를 보존하므로 순서와 값이 모두 같을 때만 같은 상태로 본다.
+- `tagInput`은 `hasPendingTagInput`과 같은 기준으로 공백만 있는 값은 미저장 변경으로 보지 않는다.
+- 에러를 던지지 않고 변경 여부를 boolean으로 반환한다.
+
+### 컴포넌트 Props
+
+```ts
+interface NoteEditorProps {
+  selectedNoteId: string | null;
+  isCreating: boolean;
+  onDone: (savedNoteId?: string) => void;
+  onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void;
+}
+
+interface UnsavedChangesDialogProps {
+  isOpen: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+```
+
+- `NoteEditor`는 마지막 저장 상태와 현재 draft를 비교해 `onUnsavedChangesChange`로 dirty 여부를 보고한다.
+- `NoteEditor`는 dirty 상태가 있을 때만 `beforeunload` 기본 경고를 등록하고, 저장 성공이나 노트 전환 후에는 dirty를 해제한다.
+- `UnsavedChangesDialog`는 내부 이동 확인만 담당하며 API 호출이나 노트 상태를 직접 변경하지 않는다.
+
+### App 상태와 핸들러
+
+```ts
+const [hasUnsavedEditorChanges, setHasUnsavedEditorChanges] = useState(false);
+const [pendingNavigation, setPendingNavigation] = useState<PendingNoteNavigation | null>(null);
+
+function requestNavigation(action: PendingNoteNavigation): void;
+function confirmPendingNavigation(): void;
+function cancelPendingNavigation(): void;
+function executeNavigation(action: PendingNoteNavigation): void;
+```
+
+- `requestNavigation`은 dirty 상태가 없으면 즉시 `executeNavigation`을 호출한다.
+- dirty 상태가 있으면 원래 액션을 `pendingNavigation`에 저장하고 미저장 변경 확인 모달을 표시한다.
+- `confirmPendingNavigation`은 현재 editor draft를 계속 사용하지 않도록 pending 상태와 dirty 상태를 정리한 뒤 원래 액션을 실행한다.
+- `cancelPendingNavigation`은 pending 상태만 비우고 현재 노트 편집 화면과 입력값을 유지한다.
+- 태그 모드 안의 노트 카드 선택은 이미 편집 화면을 벗어난 뒤의 액션이므로 추가 guard를 거치지 않는다.
+
+## 테스트 시나리오
+
+- [정상] App.guardUnsavedNavigation — should show the unsaved changes dialog when the user changes title, content, saved tags, or pending tag input before selecting another note, creating a note, or opening tags
+- [정상] App.confirmUnsavedNavigation — should discard the current draft and execute the queued navigation when the user chooses to continue, including entering tag mode and then selecting a tagged note without an additional dialog
+- [경계] App.cancelUnsavedNavigation — should keep the current editor selected and preserve entered title, content, and tags when the user cancels the unsaved changes dialog
+- [예외] App.beforeUnloadGuard — should register the browser beforeunload warning only while unsaved editor changes exist and should navigate immediately without a dialog when there are no unsaved changes
