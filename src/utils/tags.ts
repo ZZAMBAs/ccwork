@@ -1,9 +1,15 @@
 import type { Note } from '../types/note';
-import type { TagAutocompleteCandidate, TagParseResult, TagValidationError } from '../types/tag';
+import type {
+  TagAutocompleteCandidate,
+  TagParseResult,
+  TagSummary,
+  TagValidationError,
+} from '../types/tag';
 
 const DEFAULT_MAX_TAGS = 5;
 const DEFAULT_AUTOCOMPLETE_LIMIT = 3;
 const VALID_TAG_PATTERN = /^[\p{L}\p{N} _#-]+$/u;
+type TagNameUsage = { usageCount: number; latestUpdatedAt: string };
 
 export function normalizeTagName(input: string): string {
   return input.trim().replace(/\s+/g, ' ');
@@ -90,13 +96,24 @@ export function hasPendingTagInput(input: string): boolean {
   return normalizeTagName(input).length > 0;
 }
 
+function chooseRepresentativeTagName(names: Map<string, TagNameUsage>): string {
+  const [tagName] = [...names.entries()].sort(
+    ([leftName, left], [rightName, right]) =>
+      right.usageCount - left.usageCount ||
+      right.latestUpdatedAt.localeCompare(left.latestUpdatedAt) ||
+      leftName.localeCompare(rightName),
+  )[0];
+
+  return tagName;
+}
+
 export function collectTagAutocompleteCandidates(notes: Note[]): TagAutocompleteCandidate[] {
   const candidates = new Map<
     string,
     {
       usageCount: number;
       latestUpdatedAt: string;
-      names: Map<string, { usageCount: number; latestUpdatedAt: string }>;
+      names: Map<string, TagNameUsage>;
     }
   >();
 
@@ -131,19 +148,92 @@ export function collectTagAutocompleteCandidates(notes: Note[]): TagAutocomplete
   }
 
   return [...candidates.entries()].map(([comparisonKey, candidate]) => {
-    const [tagName] = [...candidate.names.entries()].sort(
-      ([leftName, left], [rightName, right]) =>
-        right.usageCount - left.usageCount ||
-        right.latestUpdatedAt.localeCompare(left.latestUpdatedAt) ||
-        leftName.localeCompare(rightName),
-    )[0];
-
     return {
       comparisonKey,
-      tagName,
+      tagName: chooseRepresentativeTagName(candidate.names),
       usageCount: candidate.usageCount,
       latestUpdatedAt: candidate.latestUpdatedAt,
     };
+  });
+}
+
+export function collectTagSummaries(notes: Note[]): TagSummary[] {
+  const summaries = new Map<
+    string,
+    {
+      noteCount: number;
+      latestUpdatedAt: string;
+      names: Map<string, TagNameUsage>;
+    }
+  >();
+
+  for (const note of notes) {
+    const seenComparisonKeys = new Set<string>();
+
+    for (const rawTag of note.tags) {
+      const tagName = normalizeTagName(rawTag);
+      if (getTagValidationError(tagName)) continue;
+
+      const comparisonKey = getTagComparisonKey(tagName);
+      if (seenComparisonKeys.has(comparisonKey)) continue;
+
+      seenComparisonKeys.add(comparisonKey);
+      const summary = summaries.get(comparisonKey) ?? {
+        noteCount: 0,
+        latestUpdatedAt: note.updatedAt,
+        names: new Map(),
+      };
+      const name = summary.names.get(tagName) ?? {
+        usageCount: 0,
+        latestUpdatedAt: note.updatedAt,
+      };
+
+      name.usageCount += 1;
+      if (note.updatedAt > name.latestUpdatedAt) name.latestUpdatedAt = note.updatedAt;
+      summary.names.set(tagName, name);
+      summary.noteCount += 1;
+      if (note.updatedAt > summary.latestUpdatedAt) summary.latestUpdatedAt = note.updatedAt;
+      summaries.set(comparisonKey, summary);
+    }
+  }
+
+  return [...summaries.entries()].map(([comparisonKey, summary]) => {
+    return {
+      comparisonKey,
+      tagName: chooseRepresentativeTagName(summary.names),
+      noteCount: summary.noteCount,
+      latestUpdatedAt: summary.latestUpdatedAt,
+    };
+  });
+}
+
+export function sortTagSummariesForList(summaries: TagSummary[]): TagSummary[] {
+  return [...summaries].sort(
+    (left, right) =>
+      right.latestUpdatedAt.localeCompare(left.latestUpdatedAt) ||
+      left.tagName.localeCompare(right.tagName),
+  );
+}
+
+export function searchTagSummaries(summaries: TagSummary[], query: string): TagSummary[] {
+  const queryKey = getTagComparisonKey(query);
+  if (!queryKey) return summaries;
+
+  return summaries.filter((summary) => summary.comparisonKey.startsWith(queryKey));
+}
+
+export function sortTagSummariesForSearch(summaries: TagSummary[], query: string): TagSummary[] {
+  const queryKey = getTagComparisonKey(query);
+
+  return [...summaries].sort((left, right) => {
+    const leftRemainderLength = left.comparisonKey.slice(queryKey.length).length;
+    const rightRemainderLength = right.comparisonKey.slice(queryKey.length).length;
+
+    return (
+      leftRemainderLength - rightRemainderLength ||
+      right.latestUpdatedAt.localeCompare(left.latestUpdatedAt) ||
+      left.tagName.localeCompare(right.tagName)
+    );
   });
 }
 
