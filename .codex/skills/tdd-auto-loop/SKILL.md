@@ -62,6 +62,7 @@ AUTONOMOUS SUBAGENT MODE:
 - 단계 JSON은 각 단계가 필요한 정보만 가진다. 공통 반복 식별자인 `$ARGUMENTS`, GitHub issue 번호, 요약 문장은 매 단계에 넣지 않는다.
 - `files_changed`는 실제 파일을 생성 또는 수정한 단계에만 넣는다. 값은 경로 문자열 배열만 허용하고 본문이나 diff를 넣지 않는다.
 - 성공 schema와 STOP schema를 다르게 취급한다. STOP 응답은 `stage`, `status`, `stop_reason`만 필수이고, 실패 전에 확정된 단계별 필드만 추가할 수 있다.
+- 예외: AC Verifier의 `ac_passed_false` STOP은 해결 가능한 정보를 위해 `ac_passed: false`와 비어 있지 않은 `gaps` 배열을 반드시 포함한다.
 - 명세된 schema를 변형하지 않는다. schema에 없는 key를 추가하거나 예시 타입을 바꾸면 schema 위반이다.
 
 최소 공통 형태:
@@ -226,6 +227,24 @@ STOP 조건:
 - `ac_source_unavailable`
 - `schema_violation`
 
+`ac_passed_false` STOP Schema:
+
+```json
+{
+  "stage": "ac_verifier",
+  "status": "stop",
+  "stop_reason": "ac_passed_false",
+  "ac_passed": false,
+  "gaps": ["AC-1: 태그를 클릭해도 해당 태그가 포함된 노트 목록으로 전환되지 않는다."]
+}
+```
+
+규칙:
+
+- `gaps`는 비어 있으면 schema 위반이다.
+- 각 `gaps` 항목은 실패한 AC 식별자나 요약과 현재 불충족 이유를 한 문장으로 포함한다.
+- 해결에 필요한 파일 본문, diff, 긴 로그는 포함하지 않는다.
+
 ## 5. TDD Refactor
 
 Subagent prompt에는 `/tdd-refactor $ARGUMENTS` 실행 지시와 이전 단계 JSON을 전달한다. 하위 승인 게이트는 자체 통과하되 모호하면 STOP한다.
@@ -328,7 +347,7 @@ STOP 시 메인 에이전트는 다음 순서만 수행한다.
 
 해설 규칙:
 
-- 해설은 STOP JSON의 `stage`, `stop_reason`, 이전 단계 성공 여부, 확인된 `github_issue`, `base_branch`, `work_branch` 같은 필드만 근거로 작성한다.
+- 해설은 STOP JSON의 `stage`, `stop_reason`, `gaps`, 이전 단계 성공 여부, 확인된 `github_issue`, `base_branch`, `work_branch` 같은 필드만 근거로 작성한다.
 - JSON만 출력하지 않는다. 사용자가 다음 조치를 판단할 수 있도록 원인과 권장 조치를 함께 설명한다.
 - 코드 본문, 테스트 본문, diff 본문을 직접 읽지 않는다.
 - GitHub issue에는 STOP 코멘트를 남기지 않는다.
