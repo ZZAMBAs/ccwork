@@ -6,3 +6,10 @@ export interface Note {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface NoteEditorDraftSnapshot {
+  title: string;
+  content: string;
+  tags: string[];
+  tagInput: string;
+}

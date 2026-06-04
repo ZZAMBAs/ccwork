@@ -37,7 +37,7 @@ description: 카테고리-이슈번호 입력 하나로 TDD 7단계를 subagent 
   - 성공: `[<단계명>] OK`
   - 중단: `[<단계명>] STOP(<사유>)`
 - 사용자에게 승인이나 추가 입력을 묻지 않는다.
-- STOP 시 메인 로그를 남기고 GitHub issue comment를 작성한 뒤 루프를 종료한다. GitHub MCP를 우선 사용하고 불가능하면 `gh issue comment`를 사용한다.
+- STOP 시 GitHub issue comment를 작성하지 않는다. 메인 로그 JSON과 사람이 읽을 수 있는 중단 해설을 사용자에게 보고한 뒤 루프를 종료한다.
 
 ## 모든 Subagent Prompt 접미사
 
@@ -62,6 +62,7 @@ AUTONOMOUS SUBAGENT MODE:
 - 단계 JSON은 각 단계가 필요한 정보만 가진다. 공통 반복 식별자인 `$ARGUMENTS`, GitHub issue 번호, 요약 문장은 매 단계에 넣지 않는다.
 - `files_changed`는 실제 파일을 생성 또는 수정한 단계에만 넣는다. 값은 경로 문자열 배열만 허용하고 본문이나 diff를 넣지 않는다.
 - 성공 schema와 STOP schema를 다르게 취급한다. STOP 응답은 `stage`, `status`, `stop_reason`만 필수이고, 실패 전에 확정된 단계별 필드만 추가할 수 있다.
+- 예외: AC Verifier의 `ac_passed_false` STOP은 해결 가능한 정보를 위해 `ac_passed: false`와 비어 있지 않은 `gaps` 배열을 반드시 포함한다.
 - 명세된 schema를 변형하지 않는다. schema에 없는 key를 추가하거나 예시 타입을 바꾸면 schema 위반이다.
 
 최소 공통 형태:
@@ -83,15 +84,15 @@ Preflight도 subagent로 실행한다. 메인 에이전트는 직접 `git status
 - `$ARGUMENTS` 형식이 `<카테고리>-<이슈번호>`이다.
 - GitHub Issue를 확인했고 AC가 존재한다.
 - `git status --short`가 clean이다.
-- 현재 base 브랜치가 `feature/<spec>` 형식이다.
-- 작업 브랜치가 `issue/<slug>` 형식으로 생성 또는 전환 가능하다.
-- 작업 브랜치는 `feature/<spec>`에서 분기한다.
+- 현재 base 브랜치가 `feat/<spec>` 형식이다.
+- 작업 브랜치가 `issue/<카테고리>-<이슈번호>-<slug>` 형식으로 생성 가능하다.
+- 작업 브랜치는 `feat/<spec>`에서 분기한다.
 
 작업:
 
 - GitHub 이슈 번호를 확인한다.
-- issue slug를 결정한다.
-- 작업 브랜치 `issue/<slug>`를 생성한다. 이미 있거나 원격에 있으면 추측하지 말고 STOP한다.
+- GitHub 이슈 제목이나 로컬 이슈 문서 제목에서 issue summary slug를 결정한다.
+- 작업 브랜치 `issue/<카테고리>-<이슈번호>-<issue-summary-slug>`를 생성한다. 이미 있거나 원격에 있으면 추측하지 말고 STOP한다.
 
 Schema:
 
@@ -103,7 +104,7 @@ Schema:
   "category": "tag",
   "issue_number": 1,
   "github_issue": 12,
-  "base_branch": "feature/tag",
+  "base_branch": "feat/tag",
   "work_branch": "issue/tag-1-add-note-tag",
   "ac_present": true,
   "git_clean": true
@@ -226,6 +227,24 @@ STOP 조건:
 - `ac_source_unavailable`
 - `schema_violation`
 
+`ac_passed_false` STOP Schema:
+
+```json
+{
+  "stage": "ac_verifier",
+  "status": "stop",
+  "stop_reason": "ac_passed_false",
+  "ac_passed": false,
+  "gaps": ["AC-1: 태그를 클릭해도 해당 태그가 포함된 노트 목록으로 전환되지 않는다."]
+}
+```
+
+규칙:
+
+- `gaps`는 비어 있으면 schema 위반이다.
+- 각 `gaps` 항목은 실패한 AC 식별자나 요약과 현재 불충족 이유를 한 문장으로 포함한다.
+- 해결에 필요한 파일 본문, diff, 긴 로그는 포함하지 않는다.
+
 ## 5. TDD Refactor
 
 Subagent prompt에는 `/tdd-refactor $ARGUMENTS` 실행 지시와 이전 단계 JSON을 전달한다. 하위 승인 게이트는 자체 통과하되 모호하면 STOP한다.
@@ -282,7 +301,7 @@ Subagent prompt에는 `/create-pr` 실행 지시, Preflight JSON, Security Revie
 
 강제 조건:
 
-- PR base는 Preflight의 `base_branch`인 `feature/<spec>`이다.
+- PR base는 Preflight의 `base_branch`인 `feat/<spec>`이다.
 - PR body에 `Closes #<GitHub 이슈 번호>`를 포함한다.
 - commitlint 검증을 실행한다. 실패하면 STOP한다.
 - create-pr의 사용자 승인 게이트는 자체 통과한다.
@@ -322,9 +341,16 @@ STOP 조건:
 STOP 시 메인 에이전트는 다음 순서만 수행한다.
 
 1. `[<단계명>] STOP(<stop_reason>)` 한 줄 출력.
-2. 아래 메인 로그 JSON을 본 세션에 남긴다.
-3. GitHub issue comment를 작성한다.
+2. STOP JSON을 해석해 왜 멈췄는지 사용자에게 짧게 설명한다.
+3. 아래 메인 로그 JSON을 본 세션에 남긴다.
 4. 루프 종료.
+
+해설 규칙:
+
+- 해설은 STOP JSON의 `stage`, `stop_reason`, `gaps`, 이전 단계 성공 여부, 확인된 `github_issue`, `base_branch`, `work_branch` 같은 필드만 근거로 작성한다.
+- JSON만 출력하지 않는다. 사용자가 다음 조치를 판단할 수 있도록 원인과 권장 조치를 함께 설명한다.
+- 코드 본문, 테스트 본문, diff 본문을 직접 읽지 않는다.
+- GitHub issue에는 STOP 코멘트를 남기지 않는다.
 
 STOP 메인 로그:
 
@@ -343,17 +369,33 @@ STOP 메인 로그:
     "tdd_green",
     "ac_verifier",
     "tdd_refactor"
-  ]
+  ],
+  "stop_summary": "Security Review 단계에서 npm audit 결과 High 이상 취약점이 남아 자동 루프를 중단했다.",
+  "next_action": "취약점 원인을 확인해 수정하거나 무시 가능하다고 판단되면 보안 검토 정책을 조정한 뒤 다시 실행한다."
 }
 ```
 
-GitHub issue comment 본문:
+STOP 보고 예시:
 
-```text
-tdd-auto-loop STOP
-- argument: tag-1
-- stage: security_review
-- reason: audit_high_or_above
+```json
+{
+  "loop": "tdd_auto_loop",
+  "status": "stop",
+  "argument": "tag-1",
+  "github_issue": 12,
+  "stage": "security_review",
+  "stop_reason": "audit_high_or_above",
+  "completed_stages": [
+    "preflight",
+    "test_scenarios",
+    "tdd_red",
+    "tdd_green",
+    "ac_verifier",
+    "tdd_refactor"
+  ],
+  "stop_summary": "Security Review 단계에서 npm audit 결과 High 이상 취약점이 남아 자동 루프를 중단했다.",
+  "next_action": "취약점 원인을 확인해 수정하거나 무시 가능하다고 판단되면 보안 검토 정책을 조정한 뒤 다시 실행한다."
+}
 ```
 
 ## 완료 처리
@@ -366,7 +408,7 @@ tdd-auto-loop STOP
   "status": "ok",
   "argument": "tag-1",
   "github_issue": 12,
-  "base_branch": "feature/tag",
+  "base_branch": "feat/tag",
   "work_branch": "issue/tag-1-add-note-tag",
   "completed_stages": [
     "preflight",

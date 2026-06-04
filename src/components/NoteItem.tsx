@@ -8,6 +8,9 @@ interface NoteItemProps {
 }
 
 export function NoteItem({ note, isSelected, onSelect, onDelete }: NoteItemProps) {
+  const visibleTags = note.tags.slice(0, 2);
+  const remainingTagCount = note.tags.length - visibleTags.length;
+
   return (
     <div
       onClick={() => onSelect(note.id)}
@@ -34,6 +37,27 @@ export function NoteItem({ note, isSelected, onSelect, onDelete }: NoteItemProps
       <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
         {note.content || '(내용 없음)'}
       </p>
+      {visibleTags.length > 0 ? (
+        <div
+          data-testid="note-item-tag-summary"
+          className="mt-2 flex max-w-full gap-1.5 overflow-hidden"
+        >
+          {visibleTags.map((tag) => (
+            <span
+              key={tag}
+              title={tag}
+              className="min-w-0 max-w-full truncate rounded-xl border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
+            >
+              {tag}
+            </span>
+          ))}
+          {remainingTagCount > 0 ? (
+            <span className="shrink-0 rounded-xl border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              +{remainingTagCount}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       <p className="text-[10px] text-muted-foreground/70 mt-2">
         {new Date(note.updatedAt).toLocaleDateString('ko-KR')}
       </p>

@@ -48,10 +48,12 @@ description: 이슈 1개를 받아 TDD 풀 사이클의 7단계를 순서대로 
    - 이 브랜치를 PR base로 기억한다.
 
 5. 작업 브랜치를 결정한다.
-   - GitHub 이슈 제목을 기반으로 issue slug를 만든다.
-   - slug 규칙: 영문/숫자는 lowercase, 공백과 구분자는 `-`, 나머지는 제거한다.
-   - 제목에서 안정적인 slug를 만들 수 없으면 `<category>-<issueNumber>`를 사용한다.
-   - 작업 브랜치명은 `issue/<category>-<issueNumber>-<issue-slug>`이다.
+   - GitHub 이슈 제목이나 로컬 이슈 문서 제목에서 이슈 구현 간략 요약을 추출해 issue summary slug를 만든다.
+   - 제목 앞의 `[<category>-<issueNumber>]`, `<category>-<issueNumber>`, commit type 접두어(`feat:`, `fix:` 등)는 slug에서 제외한다.
+   - 영어 요약이 있으면 slug 규칙은 영문/숫자는 lowercase, 공백과 구분자는 `-`, 나머지는 제거한다.
+   - 한국어 제목처럼 안정적인 영문 slug를 만들 수 없으면 구현 의미를 간략히 영어로 번역해 사용한다.
+   - 요약 slug를 결정할 수 없으면 `<category>-<issueNumber>`를 사용한다.
+   - 작업 브랜치명은 `issue/<category>-<issueNumber>-<issue-summary-slug>`이다.
    - `feat/*`는 spec 단위 base 브랜치로만 사용하고, 개별 이슈 구현 브랜치는 `issue/*`로 분리한다.
 
 6. 작업 브랜치 존재 여부를 확인한다.
@@ -68,7 +70,7 @@ description: 이슈 1개를 받아 TDD 풀 사이클의 7단계를 순서대로 
 사전 점검 완료
 - 이슈: <category>-<issueNumber> / GitHub #<number>
 - base: feat/<spec>
-- 작업 브랜치: issue/<category>-<issueNumber>-<issue-slug>
+- 작업 브랜치: issue/<category>-<issueNumber>-<issue-summary-slug>
 ```
 
 ## 1. Test Scenarios

@@ -1,9 +1,21 @@
-import type { Note } from '../types/note';
-import type { TagAutocompleteCandidate, TagParseResult, TagValidationError } from '../types/tag';
+import type { Note, NoteEditorDraftSnapshot } from '../types/note';
+import type {
+  TagAutocompleteCandidate,
+  TagParseResult,
+  TaggedNoteCard,
+  TagSummary,
+  TagValidationError,
+} from '../types/tag';
 
 const DEFAULT_MAX_TAGS = 5;
 const DEFAULT_AUTOCOMPLETE_LIMIT = 3;
 const VALID_TAG_PATTERN = /^[\p{L}\p{N} _#-]+$/u;
+type TagNameUsage = { usageCount: number; latestUpdatedAt: string };
+type TagAggregate = {
+  count: number;
+  latestUpdatedAt: string;
+  names: Map<string, TagNameUsage>;
+};
 
 export function normalizeTagName(input: string): string {
   return input.trim().replace(/\s+/g, ' ');
@@ -90,15 +102,35 @@ export function hasPendingTagInput(input: string): boolean {
   return normalizeTagName(input).length > 0;
 }
 
-export function collectTagAutocompleteCandidates(notes: Note[]): TagAutocompleteCandidate[] {
-  const candidates = new Map<
-    string,
-    {
-      usageCount: number;
-      latestUpdatedAt: string;
-      names: Map<string, { usageCount: number; latestUpdatedAt: string }>;
-    }
-  >();
+export function hasUnsavedNoteDraftChanges(
+  currentDraft: NoteEditorDraftSnapshot,
+  savedDraft: NoteEditorDraftSnapshot,
+): boolean {
+  const tagsChanged =
+    currentDraft.tags.length !== savedDraft.tags.length ||
+    currentDraft.tags.some((tag, index) => tag !== savedDraft.tags[index]);
+
+  return (
+    currentDraft.title !== savedDraft.title ||
+    currentDraft.content !== savedDraft.content ||
+    tagsChanged ||
+    hasPendingTagInput(currentDraft.tagInput)
+  );
+}
+
+function chooseRepresentativeTagName(names: Map<string, TagNameUsage>): string {
+  const [tagName] = [...names.entries()].sort(
+    ([leftName, left], [rightName, right]) =>
+      right.usageCount - left.usageCount ||
+      right.latestUpdatedAt.localeCompare(left.latestUpdatedAt) ||
+      leftName.localeCompare(rightName),
+  )[0];
+
+  return tagName;
+}
+
+function collectTagAggregates(notes: Note[]): Map<string, TagAggregate> {
+  const aggregates = new Map<string, TagAggregate>();
 
   for (const note of notes) {
     const seenComparisonKeys = new Set<string>();
@@ -111,40 +143,103 @@ export function collectTagAutocompleteCandidates(notes: Note[]): TagAutocomplete
       if (seenComparisonKeys.has(comparisonKey)) continue;
 
       seenComparisonKeys.add(comparisonKey);
-      const candidate = candidates.get(comparisonKey) ?? {
-        usageCount: 0,
+      const aggregate = aggregates.get(comparisonKey) ?? {
+        count: 0,
         latestUpdatedAt: note.updatedAt,
         names: new Map(),
       };
-      const name = candidate.names.get(tagName) ?? {
+      const name = aggregate.names.get(tagName) ?? {
         usageCount: 0,
         latestUpdatedAt: note.updatedAt,
       };
 
       name.usageCount += 1;
       if (note.updatedAt > name.latestUpdatedAt) name.latestUpdatedAt = note.updatedAt;
-      candidate.names.set(tagName, name);
-      candidate.usageCount += 1;
-      if (note.updatedAt > candidate.latestUpdatedAt) candidate.latestUpdatedAt = note.updatedAt;
-      candidates.set(comparisonKey, candidate);
+      aggregate.names.set(tagName, name);
+      aggregate.count += 1;
+      if (note.updatedAt > aggregate.latestUpdatedAt) aggregate.latestUpdatedAt = note.updatedAt;
+      aggregates.set(comparisonKey, aggregate);
     }
   }
 
-  return [...candidates.entries()].map(([comparisonKey, candidate]) => {
-    const [tagName] = [...candidate.names.entries()].sort(
-      ([leftName, left], [rightName, right]) =>
-        right.usageCount - left.usageCount ||
-        right.latestUpdatedAt.localeCompare(left.latestUpdatedAt) ||
-        leftName.localeCompare(rightName),
-    )[0];
+  return aggregates;
+}
 
+export function collectTagAutocompleteCandidates(notes: Note[]): TagAutocompleteCandidate[] {
+  return [...collectTagAggregates(notes).entries()].map(([comparisonKey, aggregate]) => {
     return {
       comparisonKey,
-      tagName,
-      usageCount: candidate.usageCount,
-      latestUpdatedAt: candidate.latestUpdatedAt,
+      tagName: chooseRepresentativeTagName(aggregate.names),
+      usageCount: aggregate.count,
+      latestUpdatedAt: aggregate.latestUpdatedAt,
     };
   });
+}
+
+export function collectTagSummaries(notes: Note[]): TagSummary[] {
+  return [...collectTagAggregates(notes).entries()].map(([comparisonKey, summary]) => {
+    return {
+      comparisonKey,
+      tagName: chooseRepresentativeTagName(summary.names),
+      noteCount: summary.count,
+      latestUpdatedAt: summary.latestUpdatedAt,
+    };
+  });
+}
+
+export function sortTagSummariesForList(summaries: TagSummary[]): TagSummary[] {
+  return [...summaries].sort(
+    (left, right) =>
+      right.latestUpdatedAt.localeCompare(left.latestUpdatedAt) ||
+      left.tagName.localeCompare(right.tagName),
+  );
+}
+
+export function searchTagSummaries(summaries: TagSummary[], query: string): TagSummary[] {
+  const queryKey = getTagComparisonKey(query);
+  if (!queryKey) return summaries;
+
+  return summaries.filter((summary) => summary.comparisonKey.startsWith(queryKey));
+}
+
+export function sortTagSummariesForSearch(summaries: TagSummary[], query: string): TagSummary[] {
+  const queryKey = getTagComparisonKey(query);
+
+  return [...summaries].sort((left, right) => {
+    const leftRemainderLength = left.comparisonKey.slice(queryKey.length).length;
+    const rightRemainderLength = right.comparisonKey.slice(queryKey.length).length;
+
+    return (
+      leftRemainderLength - rightRemainderLength ||
+      right.latestUpdatedAt.localeCompare(left.latestUpdatedAt) ||
+      left.tagName.localeCompare(right.tagName)
+    );
+  });
+}
+
+export function getNotesByTag(notes: Note[], comparisonKey: string): TaggedNoteCard[] {
+  return notes
+    .filter((note) =>
+      note.tags.some((rawTag) => {
+        const tagName = normalizeTagName(rawTag);
+        return !getTagValidationError(tagName) && getTagComparisonKey(tagName) === comparisonKey;
+      }),
+    )
+    .map((note) => {
+      const title = note.title.trim();
+
+      return {
+        id: note.id,
+        title: title || '(제목 없음)',
+        contentPreview: note.content.trim(),
+        tags: note.tags,
+        updatedAt: note.updatedAt,
+      };
+    })
+    .sort(
+      (left, right) =>
+        right.updatedAt.localeCompare(left.updatedAt) || left.title.localeCompare(right.title),
+    );
 }
 
 export function getTagAutocompleteSuggestions(

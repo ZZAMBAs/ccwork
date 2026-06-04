@@ -1,5 +1,53 @@
 # Issue 4. 태그 목록을 검색하고 탐색하기
 
+## 확정 시그니처
+
+```ts
+// src/types/tag.ts
+export interface TagSummary {
+  comparisonKey: string;
+  tagName: string;
+  noteCount: number;
+  latestUpdatedAt: string;
+}
+
+export interface TagListViewProps {
+  notes: Note[];
+  loading: boolean;
+  error: string | null;
+  onBackToNotes: () => void;
+}
+
+// src/utils/tags.ts
+export function collectTagSummaries(notes: Note[]): TagSummary[];
+export function searchTagSummaries(summaries: TagSummary[], query: string): TagSummary[];
+export function sortTagSummariesForList(summaries: TagSummary[]): TagSummary[];
+export function sortTagSummariesForSearch(summaries: TagSummary[], query: string): TagSummary[];
+
+// src/components/TagListView.tsx
+export function TagListView(props: TagListViewProps): JSX.Element;
+
+// src/components/Layout.tsx
+interface LayoutProps {
+  onNewNote: () => void;
+  onOpenTags: () => void;
+  sidebar: ReactNode;
+  main: ReactNode;
+}
+
+// src/App.tsx 내부 상태
+type AppMode = 'notes' | 'tags';
+const [mode, setMode] = useState<AppMode>('notes');
+const [lastSelectedNoteIdBeforeTags, setLastSelectedNoteIdBeforeTags] = useState<string | null>(
+  null,
+);
+```
+
+- 순수 함수는 오류를 던지지 않고 유효하지 않은 저장 태그만 제외한다.
+- `TagListView`는 `loading`, `error`, 빈 태그, 검색 결과 없음 상태를 표시한다.
+- 오류가 있어도 `notes`가 있으면 태그 목록 계산과 렌더링을 계속한다.
+- `onBackToNotes`는 태그 모드를 종료하고, 진입 직전 노트가 현재 `notes`에 남아 있으면 다시 선택한다.
+
 ## 목표
 
 사용자가 태그 모드에 진입해 전체 태그 목록을 보고 prefix 검색으로 원하는 태그를 찾을 수 있게 한다.
@@ -37,3 +85,28 @@
 - 오류가 있더라도 이미 불러온 노트가 있으면, 사용자는 태그 카드 목록을 계속 볼 수 있어야 한다.
 - 사용자가 노트 A를 선택한 뒤 태그 모드에 들어갔다가 노트로 돌아가기를 클릭하면, 노트 A가 아직 존재하는 경우 다시 선택되어야 한다.
 - 사용자가 태그 모드를 나갔다가 다시 들어오면, 이전 검색어나 상세 화면이 복원되지 않고 태그 목록 초기 상태가 표시되어야 한다.
+
+## 테스트 시나리오
+
+- [x] [정상] collectTagSummaries — should aggregate valid saved tags with note count and latest updated date when notes contain tags
+- [x] [경계] collectTagSummaries — should count duplicate comparison keys once when the same note contains duplicate persisted tags
+- [x] [경계] collectTagSummaries — should exclude invalid persisted tags when notes contain invalid tag values
+- [x] [정상] collectTagSummaries — should choose the most frequently used display name when comparison keys share multiple notations
+- [x] [경계] collectTagSummaries — should choose the most recently used display name when notation usage counts are tied
+- [x] [정상] sortTagSummariesForList — should order tag cards by latest updated date when query is empty
+- [x] [정상] searchTagSummaries — should return prefix matches without case sensitivity when a user types a query
+- [x] [정상] sortTagSummariesForSearch — should order searched tag cards by shorter matched name, latest updated date, and display name when multiple tags match
+- [x] [정상] Layout.render — should show the tag button to the left of the new note button when the app header renders
+- [x] [정상] App.openTags — should show the tag list screen without changing the browser URL when the user clicks the tag button
+- [x] [정상] App.openTags — should hide the sidebar note list and note editor when tag mode is active
+- [x] [정상] TagListView.render — should show title, back button, search input, and tag card grid when tag mode opens
+- [x] [정상] TagListView.render — should show tag cards with display name, note count, and latest updated date when saved tags exist
+- [x] [정상] TagListView.search — should show a clear button inside the search input when query has text
+- [x] [정상] TagListView.search — should clear the query and restore the full tag list when the user clicks the clear button
+- [x] [경계] TagListView.render — should show an empty state with a back button when there are no saved valid tags
+- [x] [경계] TagListView.search — should show only the no-results message inside the list area when no tags match the query
+- [x] [경계] TagListView.render — should show loading state when notes are loading in tag mode
+- [x] [예외] TagListView.render — should show the notes error message when notes have a loading error in tag mode
+- [x] [예외] TagListView.render — should keep rendering tag cards when an error exists with already loaded notes
+- [x] [정상] App.backToNotes — should restore the previously selected note when the user returns from tag mode and that note still exists
+- [x] [경계] App.openTags — should reset the previous search state when the user exits and re-enters tag mode

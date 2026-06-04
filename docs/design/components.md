@@ -40,17 +40,21 @@
 - 기본 상태는 `border-border`와 흰색 카드 배경이다.
 - 선택 상태는 `border-foreground`와 더 강한 그림자를 적용한다.
 - 삭제 버튼은 카드 우측 상단에 작게 배치하고, 카드 선택 클릭과 분리한다.
+- 태그가 있는 노트는 본문 요약 아래에 최대 2개의 작은 표시 전용 칩과 남은 개수 `+N`을 표시한다.
+- 태그 칩은 muted 계열의 낮은 대비를 사용하고, 긴 태그명은 한 줄 말줄임으로 제한한다.
 
-| 요소         | 클래스/값                                                                                        |
-| ------------ | ------------------------------------------------------------------------------------------------ |
-| 카드         | `bg-card rounded-2xl p-4 border cursor-pointer transition-all`                                   |
-| 기본 카드    | `border-border hover:shadow-[0_2px_8px_rgba(0,0,0,0.07)]`                                        |
-| 선택 카드    | `border-foreground shadow-[0_2px_12px_rgba(0,0,0,0.12)]`                                         |
-| 제목/삭제 행 | `flex items-start justify-between gap-2`                                                         |
-| 제목         | `font-semibold text-sm text-foreground line-clamp-1 flex-1`                                      |
-| 삭제 버튼    | `text-muted-foreground hover:text-destructive text-xs shrink-0 transition-colors cursor-pointer` |
-| 내용 요약    | `text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed`                              |
-| 날짜         | `text-[10px] text-muted-foreground/70 mt-2`                                                      |
+| 요소         | 클래스/값                                                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 카드         | `bg-card rounded-2xl p-4 border cursor-pointer transition-all`                                                                     |
+| 기본 카드    | `border-border hover:shadow-[0_2px_8px_rgba(0,0,0,0.07)]`                                                                          |
+| 선택 카드    | `border-foreground shadow-[0_2px_12px_rgba(0,0,0,0.12)]`                                                                           |
+| 제목/삭제 행 | `flex items-start justify-between gap-2`                                                                                           |
+| 제목         | `font-semibold text-sm text-foreground line-clamp-1 flex-1`                                                                        |
+| 삭제 버튼    | `text-muted-foreground hover:text-destructive text-xs shrink-0 transition-colors cursor-pointer`                                   |
+| 내용 요약    | `text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed`                                                                |
+| 태그 요약    | `mt-2 flex max-w-full gap-1.5 overflow-hidden`                                                                                     |
+| 태그 칩      | `min-w-0 max-w-full truncate rounded-xl border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground` |
+| 날짜         | `text-[10px] text-muted-foreground/70 mt-2`                                                                                        |
 
 ## `NoteEditor`
 
