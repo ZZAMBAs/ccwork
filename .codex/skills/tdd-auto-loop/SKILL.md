@@ -83,15 +83,15 @@ Preflight도 subagent로 실행한다. 메인 에이전트는 직접 `git status
 - `$ARGUMENTS` 형식이 `<카테고리>-<이슈번호>`이다.
 - GitHub Issue를 확인했고 AC가 존재한다.
 - `git status --short`가 clean이다.
-- 현재 base 브랜치가 `feature/<spec>` 형식이다.
-- 작업 브랜치가 `issue/<slug>` 형식으로 생성 또는 전환 가능하다.
-- 작업 브랜치는 `feature/<spec>`에서 분기한다.
+- 현재 base 브랜치가 `feat/<spec>` 형식이다.
+- 작업 브랜치가 `issue/<카테고리>-<이슈번호>-<slug>` 형식으로 생성 가능하다.
+- 작업 브랜치는 `feat/<spec>`에서 분기한다.
 
 작업:
 
 - GitHub 이슈 번호를 확인한다.
-- issue slug를 결정한다.
-- 작업 브랜치 `issue/<slug>`를 생성한다. 이미 있거나 원격에 있으면 추측하지 말고 STOP한다.
+- GitHub 이슈 제목이나 로컬 이슈 문서 제목에서 issue summary slug를 결정한다.
+- 작업 브랜치 `issue/<카테고리>-<이슈번호>-<issue-summary-slug>`를 생성한다. 이미 있거나 원격에 있으면 추측하지 말고 STOP한다.
 
 Schema:
 
@@ -103,7 +103,7 @@ Schema:
   "category": "tag",
   "issue_number": 1,
   "github_issue": 12,
-  "base_branch": "feature/tag",
+  "base_branch": "feat/tag",
   "work_branch": "issue/tag-1-add-note-tag",
   "ac_present": true,
   "git_clean": true
@@ -282,7 +282,7 @@ Subagent prompt에는 `/create-pr` 실행 지시, Preflight JSON, Security Revie
 
 강제 조건:
 
-- PR base는 Preflight의 `base_branch`인 `feature/<spec>`이다.
+- PR base는 Preflight의 `base_branch`인 `feat/<spec>`이다.
 - PR body에 `Closes #<GitHub 이슈 번호>`를 포함한다.
 - commitlint 검증을 실행한다. 실패하면 STOP한다.
 - create-pr의 사용자 승인 게이트는 자체 통과한다.
@@ -389,7 +389,7 @@ STOP 보고 예시:
   "status": "ok",
   "argument": "tag-1",
   "github_issue": 12,
-  "base_branch": "feature/tag",
+  "base_branch": "feat/tag",
   "work_branch": "issue/tag-1-add-note-tag",
   "completed_stages": [
     "preflight",
