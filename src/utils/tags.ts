@@ -1,4 +1,4 @@
-import type { Note } from '../types/note';
+import type { Note, NoteEditorDraftSnapshot } from '../types/note';
 import type {
   TagAutocompleteCandidate,
   TagParseResult,
@@ -100,6 +100,22 @@ export function removeTagFromList(currentTags: string[], tagName: string): strin
 
 export function hasPendingTagInput(input: string): boolean {
   return normalizeTagName(input).length > 0;
+}
+
+export function hasUnsavedNoteDraftChanges(
+  currentDraft: NoteEditorDraftSnapshot,
+  savedDraft: NoteEditorDraftSnapshot,
+): boolean {
+  const tagsChanged =
+    currentDraft.tags.length !== savedDraft.tags.length ||
+    currentDraft.tags.some((tag, index) => tag !== savedDraft.tags[index]);
+
+  return (
+    currentDraft.title !== savedDraft.title ||
+    currentDraft.content !== savedDraft.content ||
+    tagsChanged ||
+    hasPendingTagInput(currentDraft.tagInput)
+  );
 }
 
 function chooseRepresentativeTagName(names: Map<string, TagNameUsage>): string {
